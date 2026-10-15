@@ -1,0 +1,44 @@
+{
+  "name": "serviceflow-ai-monorepo",
+  "version": "0.1.0",
+  "private": true,
+  "description": "ServiceFlow AI - Less Admin. Better Business. AI-assisted service business management platform.",
+  "workspaces": [
+    "client",
+    "server"
+  ],
+  "scripts": {
+    "dev": "concurrently -n \"server,client\" -c \"teal,cyan\" \"npm run dev --workspace=server\" \"npm run dev --workspace=client\"",
+    "dev:client": "npm run dev --workspace=client",
+    "dev:server": "npm run dev --workspace=server",
+    "build": "npm run build --workspaces",
+    "build:client": "npm run build --workspace=client",
+    "build:server": "npm run build --workspace=server",
+    "type-check": "npm run type-check --workspaces --if-present",
+    "lint": "npm run lint --workspaces --if-present",
+    "clean": "npm run clean --workspaces --if-present"
+  },
+  "devDependencies": {
+    "concurrently": "^9.1.2"
+  },
+  "engines": {
+    "node": ">=18.0.0",
+    "npm": ">=9.0.0"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/samatha-93/serviceflow-ai.git"
+  },
+  "keywords": [
+    "service-business",
+    "crm",
+    "scheduling",
+    "field-service",
+    "automation",
+    "typescript",
+    "react",
+    "express"
+  ],
+  "author": "ServiceFlow AI Team",
+  "license": "MIT"
+}
