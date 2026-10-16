@@ -12,8 +12,10 @@ import {
   Loader2,
   WifiOff,
   AlertTriangle,
+  CalendarPlus,
+  Check,
 } from 'lucide-react';
-import { CustomerEnquiry } from '../../types';
+import { CustomerEnquiry, CreateBookingPayload } from '../../types';
 import { ENQUIRY_STATUSES } from '../../data/mockEnquiries';
 
 interface EnquiryDetailModalProps {
@@ -24,6 +26,10 @@ interface EnquiryDetailModalProps {
     id: string,
     newStatus: CustomerEnquiry['status'],
   ) => Promise<{ success: boolean; message: string }>;
+  /** Optional handler to convert this enquiry into a persistent Booking */
+  onConvertToBooking?: (
+    bookingPayload: CreateBookingPayload
+  ) => Promise<{ success: boolean; message: string; bookingId?: string }>;
   /** True while a PATCH request is in flight. */
   statusUpdating: boolean;
   /** Non-null when the last status update failed. */
@@ -38,6 +44,7 @@ export function EnquiryDetailModal({
   enquiry,
   onClose,
   onUpdateStatus,
+  onConvertToBooking,
   statusUpdating,
   statusError,
   dataSource,
@@ -45,10 +52,33 @@ export function EnquiryDetailModal({
 }: EnquiryDetailModalProps) {
   const [feedback, setFeedback] = useState<{ text: string; ok: boolean } | null>(null);
 
-  // Clear feedback when selected enquiry changes or modal closes
+  // Convert to Booking form state
+  const [showConvertForm, setShowConvertForm] = useState(false);
+  const [converting, setConverting] = useState(false);
+  const [convertedId, setConvertedId] = useState<string | null>(null);
+  const [bookingDate, setBookingDate] = useState(() => {
+    const today = new Date();
+    return today.toISOString().split('T')[0];
+  });
+  const [bookingTime, setBookingTime] = useState('09:30 AM');
+  const [duration, setDuration] = useState('1.5 hrs');
+  const [assignee, setAssignee] = useState('');
+  const [bookingNotes, setBookingNotes] = useState('');
+
+  // Clear feedback and reset conversion form when selected enquiry changes
   useEffect(() => {
     setFeedback(null);
+    setShowConvertForm(false);
+    setConverting(false);
+    setConvertedId(null);
+    if (enquiry) {
+      setBookingNotes(enquiry.message || '');
+      const today = new Date();
+      setBookingDate(today.toISOString().split('T')[0]);
+      setBookingTime('09:30 AM');
+    }
   }, [enquiry?.id]);
+
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -98,6 +128,44 @@ export function EnquiryDetailModal({
         return 'bg-brand-teal-50 text-brand-teal border-brand-teal-200 ring-2 ring-brand-teal/30';
     }
   };
+
+  const handleConfirmConvert = async () => {
+    if (!onConvertToBooking || converting) return;
+    if (!bookingDate || !bookingTime) {
+      setFeedback({ text: 'Please provide both booking date and time.', ok: false });
+      return;
+    }
+    setConverting(true);
+    setFeedback(null);
+    try {
+      const result = await onConvertToBooking({
+        enquiryId: enquiry.id,
+        customerName: enquiry.customerName,
+        serviceTitle: enquiry.serviceTitle,
+        location: enquiry.location,
+        bookingDate,
+        bookingTime,
+        duration,
+        assignee,
+        notes: bookingNotes,
+        status: 'Confirmed',
+      });
+      if (result.success) {
+        setConvertedId(result.bookingId || 'Confirmed');
+        setShowConvertForm(false);
+        setFeedback({ text: result.message, ok: true });
+      } else {
+        setFeedback({ text: result.message, ok: false });
+      }
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : 'Failed to convert enquiry to booking';
+      setFeedback({ text: msg, ok: false });
+    } finally {
+      setConverting(false);
+    }
+  };
+
+  const isBooked = enquiry.status === 'Booked' || !!convertedId;
 
   return (
     <div
@@ -285,6 +353,131 @@ export function EnquiryDetailModal({
             </div>
           </div>
 
+          {/* Convert to Booking Panel (Collapsible or Active) */}
+          {showConvertForm && (
+            <div className="p-4 sm:p-5 rounded-xl bg-surface-card border-2 border-brand-teal/30 shadow-card space-y-4 animate-fadeIn">
+              <div className="flex items-center justify-between pb-2 border-b border-surface-muted">
+                <div className="flex items-center space-x-2">
+                  <div className="w-7 h-7 rounded-lg bg-brand-teal text-white flex items-center justify-center">
+                    <CalendarPlus className="w-4 h-4" />
+                  </div>
+                  <div>
+                    <h4 className="text-xs font-bold uppercase tracking-wider text-content-primary">
+                      Schedule Service Booking
+                    </h4>
+                    <p className="text-[11px] text-content-secondary">
+                      Convert this enquiry into a confirmed booking.
+                    </p>
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setShowConvertForm(false)}
+                  className="text-xs font-semibold text-content-muted hover:text-content-primary"
+                >
+                  Cancel
+                </button>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
+                <div>
+                  <label className="font-semibold text-content-secondary block mb-1">
+                    Booking Date *
+                  </label>
+                  <input
+                    type="date"
+                    value={bookingDate}
+                    onChange={(e) => setBookingDate(e.target.value)}
+                    className="w-full px-3 py-2 rounded-xl bg-surface-bg border border-surface-muted text-content-primary focus:outline-none focus:ring-2 focus:ring-brand-teal/20 focus:border-brand-teal"
+                    id="booking-date-input"
+                  />
+                </div>
+
+                <div>
+                  <label className="font-semibold text-content-secondary block mb-1">
+                    Booking Time *
+                  </label>
+                  <input
+                    type="text"
+                    value={bookingTime}
+                    onChange={(e) => setBookingTime(e.target.value)}
+                    placeholder="e.g. 09:30 AM or 14:00"
+                    className="w-full px-3 py-2 rounded-xl bg-surface-bg border border-surface-muted text-content-primary focus:outline-none focus:ring-2 focus:ring-brand-teal/20 focus:border-brand-teal"
+                    id="booking-time-input"
+                  />
+                </div>
+
+                <div>
+                  <label className="font-semibold text-content-secondary block mb-1">
+                    Duration
+                  </label>
+                  <input
+                    type="text"
+                    value={duration}
+                    onChange={(e) => setDuration(e.target.value)}
+                    placeholder="e.g. 1.5 hrs"
+                    className="w-full px-3 py-2 rounded-xl bg-surface-bg border border-surface-muted text-content-primary focus:outline-none focus:ring-2 focus:ring-brand-teal/20 focus:border-brand-teal"
+                  />
+                </div>
+
+                <div>
+                  <label className="font-semibold text-content-secondary block mb-1">
+                    Assignee (Optional)
+                  </label>
+                  <input
+                    type="text"
+                    value={assignee}
+                    onChange={(e) => setAssignee(e.target.value)}
+                    placeholder="e.g. Alex M. or Crew 1"
+                    className="w-full px-3 py-2 rounded-xl bg-surface-bg border border-surface-muted text-content-primary focus:outline-none focus:ring-2 focus:ring-brand-teal/20 focus:border-brand-teal"
+                  />
+                </div>
+
+                <div className="sm:col-span-2">
+                  <label className="font-semibold text-content-secondary block mb-1">
+                    Internal Booking Notes
+                  </label>
+                  <textarea
+                    rows={2}
+                    value={bookingNotes}
+                    onChange={(e) => setBookingNotes(e.target.value)}
+                    placeholder="Access codes, customer notes, parts required..."
+                    className="w-full px-3 py-2 rounded-xl bg-surface-bg border border-surface-muted text-content-primary focus:outline-none focus:ring-2 focus:ring-brand-teal/20 focus:border-brand-teal resize-none"
+                  />
+                </div>
+              </div>
+
+              <div className="flex items-center justify-end space-x-2 pt-2">
+                <button
+                  type="button"
+                  onClick={() => setShowConvertForm(false)}
+                  className="px-3.5 py-2 rounded-xl border border-surface-muted bg-white hover:bg-surface-bg text-content-secondary text-xs font-semibold"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  onClick={handleConfirmConvert}
+                  disabled={converting}
+                  className="inline-flex items-center space-x-1.5 px-4 py-2 rounded-xl bg-brand-teal hover:bg-brand-teal-light text-white font-semibold text-xs shadow-soft transition-all disabled:opacity-50"
+                  id="confirm-convert-btn"
+                >
+                  {converting ? (
+                    <>
+                      <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                      <span>Creating Booking...</span>
+                    </>
+                  ) : (
+                    <>
+                      <Check className="w-3.5 h-3.5" />
+                      <span>Confirm & Create Booking</span>
+                    </>
+                  )}
+                </button>
+              </div>
+            </div>
+          )}
+
           {/* Customer Message Block */}
           <div className="space-y-2">
             <h4 className="text-xs font-bold uppercase tracking-wider text-content-secondary flex items-center space-x-1.5">
@@ -336,9 +529,8 @@ export function EnquiryDetailModal({
                     MongoDB Persistent Storage:
                   </span>
                   <p className="leading-relaxed">
-                    Status changes are sent to and confirmed by the Express API (
-                    <code className="font-mono">PATCH /api/enquiries/:id/status</code>). The updated
-                    record is stored in MongoDB and persists across server restarts.
+                    Status changes and bookings are sent to and confirmed by the Express API. The updated
+                    records are stored in MongoDB with strict tenant isolation and persist across server restarts.
                   </p>
                 </>
               ) : (
@@ -348,7 +540,7 @@ export function EnquiryDetailModal({
                   </span>
                   <p className="leading-relaxed">
                     The Express API is running in standby mode without an active MongoDB connection.
-                    Enquiries are displayed in read-only mode; status changes cannot be persisted
+                    Enquiries and bookings are displayed in read-only mode; status changes cannot be persisted
                     until MongoDB is connected.
                   </p>
                 </>
@@ -358,7 +550,26 @@ export function EnquiryDetailModal({
         </div>
 
         {/* Modal Footer */}
-        <div className="px-6 py-3.5 bg-surface-bg/80 border-t border-surface-muted flex items-center justify-end">
+        <div className="px-6 py-3.5 bg-surface-bg/80 border-t border-surface-muted flex items-center justify-between">
+          <div>
+            {isBooked ? (
+              <span className="inline-flex items-center space-x-1.5 px-3 py-1.5 rounded-xl bg-emerald-50 text-emerald-700 border border-emerald-200 text-xs font-semibold">
+                <CheckCircle2 className="w-4 h-4 text-emerald-600" />
+                <span>{convertedId ? `Converted (${convertedId})` : 'Enquiry Booked & Scheduled'}</span>
+              </span>
+            ) : onConvertToBooking ? (
+              <button
+                type="button"
+                onClick={() => setShowConvertForm(!showConvertForm)}
+                className="inline-flex items-center space-x-1.5 px-3.5 py-2 rounded-xl bg-brand-teal hover:bg-brand-teal-light text-white font-semibold text-xs shadow-soft transition-all"
+                id="convert-to-booking-btn"
+              >
+                <CalendarPlus className="w-4 h-4" />
+                <span>{showConvertForm ? 'Hide Scheduling Form' : 'Convert to Booking'}</span>
+              </button>
+            ) : null}
+          </div>
+
           <button
             type="button"
             onClick={onClose}

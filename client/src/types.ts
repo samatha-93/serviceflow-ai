@@ -55,3 +55,35 @@ export interface ServiceCategoryItem {
   badge: string;
   subServices: string[];
 }
+
+export type BookingStatus = 'Pending' | 'Confirmed' | 'Completed' | 'Cancelled';
+
+export interface Booking {
+  id: string;
+  businessId: string;
+  enquiryId?: string;
+  customerName: string;
+  serviceTitle: string;
+  location: string;
+  bookingDate: string;
+  bookingTime: string;
+  duration?: string;
+  status: BookingStatus;
+  assignee?: string;
+  notes?: string;
+  createdAt?: string;
+  updatedAt?: string;
+}
+
+export interface CreateBookingPayload {
+  customerName: string;
+  serviceTitle: string;
+  location: string;
+  bookingDate: string;
+  bookingTime: string;
+  duration?: string;
+  status?: BookingStatus;
+  assignee?: string;
+  notes?: string;
+  enquiryId?: string;
+}

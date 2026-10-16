@@ -10,16 +10,19 @@ import {
   Loader2,
   UserCheck,
   LogOut,
+  Calendar as CalendarIcon,
 } from 'lucide-react';
 
-import { CustomerEnquiry } from '../../types';
+import { CustomerEnquiry, Booking, BookingStatus, CreateBookingPayload, UserProfile } from '../../types';
 import { DEMO_ENQUIRIES } from '../../data/mockEnquiries';
+import { DEMO_BOOKINGS } from '../../data/mockBookings';
 import { fetchEnquiries, patchEnquiryStatus, ApiError } from '../../services/enquiry.api';
+import { fetchBookings, patchBookingStatus, createBooking } from '../../services/booking.api';
 import { EnquiryMetrics } from './EnquiryMetrics';
 import { EnquiryFilters } from './EnquiryFilters';
 import { EnquiryTable } from './EnquiryTable';
 import { EnquiryDetailModal } from './EnquiryDetailModal';
-import { UserProfile } from '../../types';
+import { BookingsView } from '../bookings/BookingsView';
 
 interface EnquiryWorkspaceProps {
   onBackToLanding: () => void;
@@ -42,9 +45,11 @@ export function EnquiryWorkspace({
   onOpenAuth,
   onLogout,
 }: EnquiryWorkspaceProps) {
+  // Active Tab: Enquiries or Bookings
+  const [activeTab, setActiveTab] = useState<'enquiries' | 'bookings'>('enquiries');
 
   // ----------------------------------------------------------------
-  // Data state
+  // Enquiries Data state
   // ----------------------------------------------------------------
   const [enquiries, setEnquiries] = useState<CustomerEnquiry[]>([]);
   const [dataSource, setDataSource] = useState<DataSource>('api');
@@ -52,9 +57,18 @@ export function EnquiryWorkspace({
   const [loadError, setLoadError] = useState<string | null>(null);
 
   // ----------------------------------------------------------------
+  // Bookings Data state
+  // ----------------------------------------------------------------
+  const [bookings, setBookings] = useState<Booking[]>([]);
+  const [bookingsLoadState, setBookingsLoadState] = useState<'loading' | 'error' | 'ready'>('loading');
+  const [bookingsLoadError, setBookingsLoadError] = useState<string | null>(null);
+  const [bookingUpdatingId, setBookingUpdatingId] = useState<string | null>(null);
+
+  // ----------------------------------------------------------------
   // Detail modal state
   // ----------------------------------------------------------------
   const [selectedEnquiry, setSelectedEnquiry] = useState<CustomerEnquiry | null>(null);
+
 
   // ----------------------------------------------------------------
   // Status-update state
@@ -166,6 +180,140 @@ export function EnquiryWorkspace({
     },
     [dataSource]
   );
+
+  // ----------------------------------------------------------------
+  // Load Bookings from API (with demo fallback when offline)
+  // ----------------------------------------------------------------
+  const loadBookings = useCallback(async () => {
+    setBookingsLoadState('loading');
+    setBookingsLoadError(null);
+
+    try {
+      const data = await fetchBookings();
+      setBookings(data);
+      setBookingsLoadState('ready');
+    } catch (err) {
+      const isNetworkError = !(err instanceof ApiError);
+
+      if (isNetworkError && (backendStatus === 'offline' || backendStatus === 'checking')) {
+        setBookings(DEMO_BOOKINGS);
+        setBookingsLoadState('ready');
+      } else {
+        setBookingsLoadState('error');
+        const message =
+          err instanceof ApiError
+            ? `API error ${err.statusCode}: ${err.serverMessage}`
+            : err instanceof Error
+            ? err.message
+            : 'Failed to load bookings from the server.';
+        setBookingsLoadError(message);
+      }
+    }
+  }, [backendStatus, currentUser]);
+
+  useEffect(() => {
+    loadBookings();
+  }, [loadBookings]);
+
+  // Update booking status
+  const handleUpdateBookingStatus = useCallback(
+    async (id: string, newStatus: BookingStatus) => {
+      setBookingUpdatingId(id);
+      try {
+        if (dataSource === 'demo') {
+          setBookings((prev) =>
+            prev.map((b) => (b.id === id ? { ...b, status: newStatus } : b))
+          );
+          return { success: true, message: `Status updated to "${newStatus}" (demo mode).` };
+        }
+
+        const updated = await patchBookingStatus(id, newStatus);
+        setBookings((prev) =>
+          prev.map((b) => (b.id === id ? updated : b))
+        );
+        return {
+          success: true,
+          message: `Booking ${updated.id} status updated to "${updated.status}".`,
+        };
+      } catch (err) {
+        const message =
+          err instanceof ApiError
+            ? `Could not update booking: ${err.serverMessage} (HTTP ${err.statusCode})`
+            : err instanceof Error
+            ? err.message
+            : 'Booking status update failed.';
+        return { success: false, message };
+      } finally {
+        setBookingUpdatingId(null);
+      }
+    },
+    [dataSource]
+  );
+
+  // Convert Enquiry to Booking
+  const handleConvertToBooking = useCallback(
+    async (payload: CreateBookingPayload) => {
+      try {
+        if (dataSource === 'demo') {
+          const fakeId = `BK-${8900 + bookings.length + 1}`;
+          const newB: Booking = {
+            id: fakeId,
+            businessId: 'demo-tenant-id',
+            customerName: payload.customerName,
+            serviceTitle: payload.serviceTitle,
+            location: payload.location,
+            bookingDate: payload.bookingDate,
+            bookingTime: payload.bookingTime,
+            duration: payload.duration || '1.5 hrs',
+            status: payload.status || 'Confirmed',
+            assignee: payload.assignee || '',
+            notes: payload.notes || '',
+            enquiryId: payload.enquiryId,
+          };
+          setBookings((prev) => [newB, ...prev]);
+          if (payload.enquiryId) {
+            setEnquiries((prev) =>
+              prev.map((e) => (e.id === payload.enquiryId ? { ...e, status: 'Booked' } : e))
+            );
+          }
+          return {
+            success: true,
+            message: `Booking ${fakeId} scheduled successfully (demo mode)!`,
+            bookingId: fakeId,
+          };
+        }
+
+        const created = await createBooking(payload);
+        setBookings((prev) => [created, ...prev]);
+
+        // Optimistically update enquiry in local state to 'Booked'
+        if (payload.enquiryId) {
+          setEnquiries((prev) =>
+            prev.map((e) => (e.id === payload.enquiryId ? { ...e, status: 'Booked' } : e))
+          );
+          setSelectedEnquiry((prev) =>
+            prev && prev.id === payload.enquiryId ? { ...prev, status: 'Booked' } : prev
+          );
+        }
+
+        return {
+          success: true,
+          message: `Booking ${created.id} created successfully!`,
+          bookingId: created.id,
+        };
+      } catch (err) {
+        const message =
+          err instanceof ApiError
+            ? `${err.serverMessage} (HTTP ${err.statusCode})`
+            : err instanceof Error
+            ? err.message
+            : 'Failed to create booking.';
+        return { success: false, message };
+      }
+    },
+    [dataSource, bookings.length]
+  );
+
 
   // ----------------------------------------------------------------
   // Filtered enquiries (client-side)
@@ -370,96 +518,161 @@ export function EnquiryWorkspace({
             </div>
           </div>
         )}
-
-
-        {/* ── Loading state ── */}
-        {loadState === 'loading' && (
-          <div className="bg-surface-card rounded-2xl border border-surface-muted p-16 text-center flex flex-col items-center space-y-4 shadow-soft">
-            <Loader2 className="w-10 h-10 text-brand-teal animate-spin" />
-            <p className="text-sm font-medium text-content-secondary">
-              Loading enquiries from API…
-            </p>
-          </div>
-        )}
-
-        {/* ── Error state ── */}
-        {loadState === 'error' && (
-          <div className="bg-rose-50 border border-rose-200 rounded-2xl p-8 text-center space-y-4 shadow-soft" role="alert">
-            <div className="flex justify-center">
-              <div className="h-14 w-14 rounded-2xl bg-rose-100 border border-rose-200 flex items-center justify-center">
-                <AlertTriangle className="w-7 h-7 text-rose-500" />
-              </div>
-            </div>
-            <div className="space-y-1.5 max-w-md mx-auto">
-              <h3 className="text-base font-bold text-rose-800">Failed to load enquiries</h3>
-              <p className="text-sm text-rose-700 leading-relaxed font-mono break-words">
-                {loadError}
-              </p>
-            </div>
-            <button
-              onClick={loadEnquiries}
-              className="inline-flex items-center space-x-2 px-5 py-2.5 rounded-xl bg-rose-600 text-white hover:bg-rose-700 text-sm font-semibold shadow-soft transition-all"
+        {/* Workspace Tab Switcher */}
+        <div className="flex items-center space-x-2 border-b border-surface-muted pb-3">
+          <button
+            type="button"
+            onClick={() => setActiveTab('enquiries')}
+            className={`inline-flex items-center space-x-2 px-4 py-2.5 rounded-xl text-xs sm:text-sm font-semibold transition-all ${
+              activeTab === 'enquiries'
+                ? 'bg-brand-teal text-white shadow-soft'
+                : 'bg-surface-card text-content-secondary hover:text-content-primary hover:bg-surface-bg border border-surface-muted'
+            }`}
+            id="tab-enquiries"
+          >
+            <Inbox className="w-4 h-4" />
+            <span>Enquiries</span>
+            <span
+              className={`px-2 py-0.5 rounded-full text-[11px] font-bold ${
+                activeTab === 'enquiries'
+                  ? 'bg-white/20 text-white'
+                  : 'bg-surface-bg text-content-muted'
+              }`}
             >
-              <RefreshCw className="w-4 h-4" />
-              <span>Retry</span>
-            </button>
-          </div>
-        )}
+              {enquiries.length}
+            </span>
+          </button>
 
-        {/* ── Loaded (ready or empty) ── */}
-        {(loadState === 'ready' || loadState === 'empty') && (
+          <button
+            type="button"
+            onClick={() => setActiveTab('bookings')}
+            className={`inline-flex items-center space-x-2 px-4 py-2.5 rounded-xl text-xs sm:text-sm font-semibold transition-all ${
+              activeTab === 'bookings'
+                ? 'bg-brand-teal text-white shadow-soft'
+                : 'bg-surface-card text-content-secondary hover:text-content-primary hover:bg-surface-bg border border-surface-muted'
+            }`}
+            id="tab-bookings"
+          >
+            <CalendarIcon className="w-4 h-4" />
+            <span>Bookings & Schedule</span>
+            <span
+              className={`px-2 py-0.5 rounded-full text-[11px] font-bold ${
+                activeTab === 'bookings'
+                  ? 'bg-white/20 text-white'
+                  : 'bg-surface-bg text-content-muted'
+              }`}
+            >
+              {bookings.length}
+            </span>
+          </button>
+        </div>
+
+        {/* Tab 1: Enquiries View */}
+        {activeTab === 'enquiries' && (
           <>
-            {/* Demo data notice — only shown when server is offline */}
-            {dataSource === 'demo' && (
-              <div
-                role="status"
-                className="flex items-start space-x-3 p-4 rounded-xl bg-amber-50 border border-amber-200 text-sm text-amber-800"
-              >
-                <WifiOff className="w-5 h-5 text-amber-500 flex-shrink-0 mt-0.5" />
-                <div className="space-y-0.5">
-                  <span className="font-semibold text-amber-900">Server offline — showing demo data</span>
-                  <p className="text-xs leading-relaxed text-amber-700">
-                    The backend API could not be reached. Displaying read-only sample enquiries for
-                    demonstration purposes. Status updates will apply locally only and will not
-                    persist. Start the server and{' '}
-                    <button
-                      onClick={loadEnquiries}
-                      className="underline font-semibold hover:text-amber-900"
-                    >
-                      reload
-                    </button>{' '}
-                    to connect to live data.
-                  </p>
-                </div>
+            {/* ── Loading state ── */}
+            {loadState === 'loading' && (
+              <div className="bg-surface-card rounded-2xl border border-surface-muted p-16 text-center flex flex-col items-center space-y-4 shadow-soft">
+                <Loader2 className="w-10 h-10 text-brand-teal animate-spin" />
+                <p className="text-sm font-medium text-content-secondary">
+                  Loading enquiries from API…
+                </p>
               </div>
             )}
 
-            {/* 1. Summary Metrics Cards */}
-            <EnquiryMetrics enquiries={enquiries} />
+            {/* ── Error state ── */}
+            {loadState === 'error' && (
+              <div className="bg-rose-50 border border-rose-200 rounded-2xl p-8 text-center space-y-4 shadow-soft" role="alert">
+                <div className="flex justify-center">
+                  <div className="h-14 w-14 rounded-2xl bg-rose-100 border border-rose-200 flex items-center justify-center">
+                    <AlertTriangle className="w-7 h-7 text-rose-500" />
+                  </div>
+                </div>
+                <div className="space-y-1.5 max-w-md mx-auto">
+                  <h3 className="text-base font-bold text-rose-800">Failed to load enquiries</h3>
+                  <p className="text-sm text-rose-700 leading-relaxed font-mono break-words">
+                    {loadError}
+                  </p>
+                </div>
+                <button
+                  onClick={loadEnquiries}
+                  className="inline-flex items-center space-x-2 px-5 py-2.5 rounded-xl bg-rose-600 text-white hover:bg-rose-700 text-sm font-semibold shadow-soft transition-all"
+                >
+                  <RefreshCw className="w-4 h-4" />
+                  <span>Retry</span>
+                </button>
+              </div>
+            )}
 
-            {/* 2. Filter Toolbar */}
-            <EnquiryFilters
-              searchQuery={searchQuery}
-              onSearchChange={setSearchQuery}
-              statusFilter={statusFilter}
-              onStatusChange={setStatusFilter}
-              categoryFilter={categoryFilter}
-              onCategoryChange={setCategoryFilter}
-              urgencyFilter={urgencyFilter}
-              onUrgencyChange={setUrgencyFilter}
-              onResetFilters={handleResetFilters}
-              totalCount={enquiries.length}
-              filteredCount={filteredEnquiries.length}
-            />
+            {/* ── Loaded (ready or empty) ── */}
+            {(loadState === 'ready' || loadState === 'empty') && (
+              <>
+                {/* Demo data notice — only shown when server is offline */}
+                {dataSource === 'demo' && (
+                  <div
+                    role="status"
+                    className="flex items-start space-x-3 p-4 rounded-xl bg-amber-50 border border-amber-200 text-sm text-amber-800"
+                  >
+                    <WifiOff className="w-5 h-5 text-amber-500 flex-shrink-0 mt-0.5" />
+                    <div className="space-y-0.5">
+                      <span className="font-semibold text-amber-900">Server offline — showing demo data</span>
+                      <p className="text-xs leading-relaxed text-amber-700">
+                        The backend API could not be reached. Displaying read-only sample enquiries for
+                        demonstration purposes. Status updates will apply locally only and will not
+                        persist. Start the server and{' '}
+                        <button
+                          onClick={loadEnquiries}
+                          className="underline font-semibold hover:text-amber-900"
+                        >
+                          reload
+                        </button>{' '}
+                        to connect to live data.
+                      </p>
+                    </div>
+                  </div>
+                )}
 
-            {/* 3. Enquiry Table & Cards */}
-            <EnquiryTable
-              enquiries={filteredEnquiries}
-              onSelectEnquiry={setSelectedEnquiry}
-              onResetFilters={handleResetFilters}
-              hasFilters={hasActiveFilters}
-            />
+                {/* 1. Summary Metrics Cards */}
+                <EnquiryMetrics enquiries={enquiries} />
+
+                {/* 2. Filter Toolbar */}
+                <EnquiryFilters
+                  searchQuery={searchQuery}
+                  onSearchChange={setSearchQuery}
+                  statusFilter={statusFilter}
+                  onStatusChange={setStatusFilter}
+                  categoryFilter={categoryFilter}
+                  onCategoryChange={setCategoryFilter}
+                  urgencyFilter={urgencyFilter}
+                  onUrgencyChange={setUrgencyFilter}
+                  onResetFilters={handleResetFilters}
+                  totalCount={enquiries.length}
+                  filteredCount={filteredEnquiries.length}
+                />
+
+                {/* 3. Enquiry Table & Cards */}
+                <EnquiryTable
+                  enquiries={filteredEnquiries}
+                  onSelectEnquiry={setSelectedEnquiry}
+                  onResetFilters={handleResetFilters}
+                  hasFilters={hasActiveFilters}
+                />
+              </>
+            )}
           </>
+        )}
+
+        {/* Tab 2: Bookings & Schedule View */}
+        {activeTab === 'bookings' && (
+          <BookingsView
+            bookings={bookings}
+            loading={bookingsLoadState === 'loading'}
+            error={bookingsLoadError}
+            onRefresh={loadBookings}
+            onUpdateStatus={handleUpdateBookingStatus}
+            updatingId={bookingUpdatingId}
+            dataSource={dataSource}
+          />
         )}
       </main>
 
@@ -470,7 +683,7 @@ export function EnquiryWorkspace({
             <span>© {new Date().getFullYear()} ServiceFlow AI.</span>
             <span>•</span>
             <span className="text-content-muted">
-              Phase 3 Step 3D: Frontend-Backend API Integration
+              Booking Management & Service Scheduling
             </span>
           </div>
 
@@ -507,6 +720,7 @@ export function EnquiryWorkspace({
         enquiry={selectedEnquiry}
         onClose={() => setSelectedEnquiry(null)}
         onUpdateStatus={handleUpdateStatus}
+        onConvertToBooking={handleConvertToBooking}
         statusUpdating={statusUpdating}
         statusError={statusError}
         dataSource={dataSource}
