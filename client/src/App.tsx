@@ -97,6 +97,7 @@ export default function App() {
           onBackToLanding={closeWorkspace}
           onOpenDiagnostics={() => setDiagnosticsOpen(true)}
           backendStatus={backendStatus}
+          databaseStatus={healthData?.database.status}
         />
 
         {/* Developer Diagnostics Modal preserved in workspace */}

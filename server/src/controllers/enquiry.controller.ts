@@ -1,5 +1,8 @@
 import { Request, Response, NextFunction } from 'express';
-import { enquiryRepository } from '../repositories/enquiry.repository';
+import {
+  enquiryRepository,
+  DatabaseUnavailableError,
+} from '../repositories/enquiry.repository';
 import {
   isEnquiryStatus,
   isEnquiryUrgency,
@@ -9,11 +12,18 @@ import {
 
 /**
  * GET /api/enquiries
- * Retrieve all customer enquiries
+ * Retrieve all customer enquiries (from MongoDB when connected, or fallback demo data)
  */
-export const getEnquiries = (_req: Request, res: Response, next: NextFunction): void => {
+export const getEnquiries = async (
+  _req: Request,
+  res: Response,
+  next: NextFunction
+): Promise<void> => {
   try {
-    const enquiries = enquiryRepository.findAll();
+    const isConnected = enquiryRepository.isConnected();
+    res.setHeader('X-Database-Status', isConnected ? 'connected' : 'disconnected');
+
+    const enquiries = await enquiryRepository.findAll();
     res.status(200).json({
       status: 'success',
       data: enquiries,
@@ -28,11 +38,15 @@ export const getEnquiries = (_req: Request, res: Response, next: NextFunction): 
  * GET /api/enquiries/:id
  * Retrieve a single customer enquiry by ID
  */
-export const getEnquiryById = (req: Request, res: Response, next: NextFunction): void => {
+export const getEnquiryById = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+): Promise<void> => {
   try {
     const id = Array.isArray(req.params.id) ? req.params.id[0] : req.params.id;
 
-    if (!id) {
+    if (!id || id.trim().length === 0) {
       res.status(400).json({
         status: 'error',
         message: 'Enquiry ID is required',
@@ -40,7 +54,7 @@ export const getEnquiryById = (req: Request, res: Response, next: NextFunction):
       return;
     }
 
-    const enquiry = enquiryRepository.findById(id);
+    const enquiry = await enquiryRepository.findById(id);
 
     if (!enquiry) {
       res.status(404).json({
@@ -61,7 +75,7 @@ export const getEnquiryById = (req: Request, res: Response, next: NextFunction):
 
 /**
  * POST /api/enquiries
- * Create a new customer enquiry
+ * Create a new customer enquiry in MongoDB
  *
  * Runtime validations:
  * - Checks that body is a valid JSON object.
@@ -70,12 +84,18 @@ export const getEnquiryById = (req: Request, res: Response, next: NextFunction):
  * - Validates urgency (if provided) against allowed EnquiryUrgency values.
  * - Validates suggestedReply (if provided) is a string.
  * - Validates receivedTime (if provided) is a non-empty string.
+ * - Ensures persistent database is available; returns HTTP 503 rather than false success.
  *
  * Responses:
- * - HTTP 201: Created successfully with generated ID and timestamp.
+ * - HTTP 201: Created successfully in MongoDB with generated ID and timestamp.
  * - HTTP 400: Missing, invalid, or malformed input.
+ * - HTTP 503: Database unavailable for persistent storage.
  */
-export const createEnquiry = (req: Request, res: Response, next: NextFunction): void => {
+export const createEnquiry = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+): Promise<void> => {
   try {
     if (!req.body || typeof req.body !== 'object' || Array.isArray(req.body)) {
       res.status(400).json({
@@ -155,7 +175,17 @@ export const createEnquiry = (req: Request, res: Response, next: NextFunction): 
       return;
     }
 
-    const newEnquiry = enquiryRepository.create({
+    // Guard against silently claiming data was persisted when database is unavailable
+    if (!enquiryRepository.isConnected()) {
+      res.status(503).json({
+        status: 'error',
+        message:
+          'Database is unavailable. Cannot persist new enquiry while database is disconnected.',
+      });
+      return;
+    }
+
+    const newEnquiry = await enquiryRepository.create({
       customerName,
       serviceCategory,
       serviceTitle,
@@ -172,25 +202,38 @@ export const createEnquiry = (req: Request, res: Response, next: NextFunction): 
       data: newEnquiry,
     });
   } catch (error) {
+    if (error instanceof DatabaseUnavailableError) {
+      res.status(503).json({
+        status: 'error',
+        message: error.message,
+      });
+      return;
+    }
     next(error);
   }
 };
 
 /**
  * PATCH /api/enquiries/:id/status
- * Update the status of an existing customer enquiry
+ * Update the status of an existing customer enquiry in MongoDB
  *
  * Validations:
  * - Enquiry ID must be provided.
  * - Request body must include a valid status matching allowed EnquiryStatus values.
- * - Target enquiry must exist in repository.
+ * - Target enquiry must exist in MongoDB.
+ * - Persistent database must be connected; returns HTTP 503 if unavailable.
  *
  * Responses:
  * - HTTP 200: Successfully updated enquiry record.
  * - HTTP 400: Missing/invalid status or malformed input.
  * - HTTP 404: Enquiry not found.
+ * - HTTP 503: Database unavailable for updates.
  */
-export const updateEnquiryStatus = (req: Request, res: Response, next: NextFunction): void => {
+export const updateEnquiryStatus = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+): Promise<void> => {
   try {
     const id = Array.isArray(req.params.id) ? req.params.id[0] : req.params.id;
 
@@ -220,7 +263,17 @@ export const updateEnquiryStatus = (req: Request, res: Response, next: NextFunct
       return;
     }
 
-    const updated = enquiryRepository.updateStatus(id, status);
+    // Guard against silently claiming status was updated when database is unavailable
+    if (!enquiryRepository.isConnected()) {
+      res.status(503).json({
+        status: 'error',
+        message:
+          'Database is unavailable. Cannot update enquiry status while database is disconnected.',
+      });
+      return;
+    }
+
+    const updated = await enquiryRepository.updateStatus(id, status);
 
     if (!updated) {
       res.status(404).json({
@@ -235,7 +288,13 @@ export const updateEnquiryStatus = (req: Request, res: Response, next: NextFunct
       data: updated,
     });
   } catch (error) {
+    if (error instanceof DatabaseUnavailableError) {
+      res.status(503).json({
+        status: 'error',
+        message: error.message,
+      });
+      return;
+    }
     next(error);
   }
 };
-

@@ -3,6 +3,9 @@ import { config } from './config/env';
 import { connectDatabase, disconnectDatabase } from './config/database';
 
 async function bootstrap() {
+  // Connect to database and seed demo data prior to accepting requests
+  await connectDatabase();
+
   const server = app.listen(config.port, () => {
     console.log('====================================================');
     console.log(` ServiceFlow AI - Backend API`);
@@ -12,9 +15,6 @@ async function bootstrap() {
     console.log(` Health check: http://localhost:${config.port}/api/health`);
     console.log('====================================================');
   });
-
-  // Connect to database in the background (non-blocking)
-  connectDatabase();
 
   // Graceful shutdown handling
   const shutdown = async (signal: string) => {

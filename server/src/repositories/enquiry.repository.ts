@@ -1,47 +1,132 @@
+import mongoose from 'mongoose';
 import { CustomerEnquiry, CreateEnquiryDTO, EnquiryStatus } from '../types/enquiry.types';
 import { INITIAL_DEMO_ENQUIRIES } from '../data/mockEnquiries';
+import { EnquiryModel } from '../models/enquiry.model';
+
+export class DatabaseUnavailableError extends Error {
+  constructor(message = 'Database is currently unavailable.') {
+    super(message);
+    this.name = 'DatabaseUnavailableError';
+  }
+}
 
 /**
- * In-memory customer enquiry repository
+ * Customer Enquiry Repository
  *
- * Provides isolated data access for customer enquiries.
+ * Provides persistent data access backed by MongoDB via Mongoose,
+ * with controlled standby fallback when MongoDB is unavailable.
  *
- * PERSISTENCE & LIFECYCLE NOTICE:
- * - Data is held entirely in-memory during the server process lifetime.
- * - Created enquiries and status modifications are immediately reflected in-process.
- * - All state RESETS to INITIAL_DEMO_ENQUIRIES when the server restarts.
- * - Database persistence (MongoDB) is intentionally disconnected for this development phase.
+ * Lifecycle & Persistence behavior:
+ * - When MongoDB is connected (readyState === 1):
+ *   - Reads (findAll, findById) query MongoDB.
+ *   - Writes (create, updateStatus) persist directly to MongoDB.
+ *   - Records survive server restarts.
+ * - When MongoDB is unavailable:
+ *   - Reads return a standalone read-only copy of demo enquiries.
+ *   - Writes throw DatabaseUnavailableError so controllers return HTTP 503
+ *     rather than silently pretending ephemeral in-memory state was saved.
  */
 class EnquiryRepository {
-  private enquiries: CustomerEnquiry[];
+  private fallbackEnquiries: CustomerEnquiry[];
 
   constructor() {
-    // Initialize in-memory storage with independent copies of the demo dataset
-    this.enquiries = INITIAL_DEMO_ENQUIRIES.map((item) => ({ ...item }));
+    // In-memory fallback representation for read-only standby mode
+    this.fallbackEnquiries = INITIAL_DEMO_ENQUIRIES.map((item) => ({ ...item }));
   }
 
   /**
-   * Retrieve all enquiries
-   * Returns a copy of the in-memory array
+   * Check whether MongoDB connection is actively established and ready
    */
-  public findAll(): CustomerEnquiry[] {
-    return [...this.enquiries];
+  public isConnected(): boolean {
+    return mongoose.connection.readyState === 1;
+  }
+
+  /**
+   * Helper to project Mongoose document into clean CustomerEnquiry response shape
+   * Eliminates _id, __v, and timestamps to preserve exact API contracts.
+   */
+  private toCustomerEnquiry(doc: any): CustomerEnquiry {
+    return {
+      id: doc.id,
+      customerName: doc.customerName,
+      serviceCategory: doc.serviceCategory,
+      serviceTitle: doc.serviceTitle,
+      location: doc.location,
+      receivedTime: doc.receivedTime,
+      status: doc.status,
+      urgency: doc.urgency,
+      message: doc.message,
+      suggestedReply: doc.suggestedReply || '',
+    };
+  }
+
+  /**
+   * Retrieve all enquiries.
+   * Reads from MongoDB when connected (sorted newest first), or fallback demo records.
+   */
+  public async findAll(): Promise<CustomerEnquiry[]> {
+    if (this.isConnected()) {
+      const docs = await EnquiryModel.find().sort({ createdAt: -1, id: -1 }).lean();
+      return docs.map((doc) => this.toCustomerEnquiry(doc));
+    }
+
+    return this.fallbackEnquiries.map((item) => ({ ...item }));
   }
 
   /**
    * Retrieve a single enquiry by ID (case-insensitive lookup)
    */
-  public findById(id: string): CustomerEnquiry | undefined {
-    return this.enquiries.find((item) => item.id.toLowerCase() === id.trim().toLowerCase());
+  public async findById(id: string): Promise<CustomerEnquiry | undefined> {
+    const trimmedId = id.trim();
+    const escaped = trimmedId.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+
+    if (this.isConnected()) {
+      const doc = await EnquiryModel.findOne({
+        id: { $regex: new RegExp(`^${escaped}$`, 'i') },
+      }).lean();
+
+      return doc ? this.toCustomerEnquiry(doc) : undefined;
+    }
+
+    const found = this.fallbackEnquiries.find(
+      (item) => item.id.toLowerCase() === trimmedId.toLowerCase()
+    );
+    return found ? { ...found } : undefined;
   }
 
   /**
    * Generate next unique ENQ-XXXX identifier
-   * Inspects existing ENQ-XXXX IDs, computes the highest numeric value, and increments by 1.
+   * Inspects existing ENQ-XXXX IDs in MongoDB, computes highest numeric value, and increments by 1.
    */
-  private generateNextId(): string {
+  private async generateNextId(): Promise<string> {
+    if (this.isConnected()) {
+      const docs = await EnquiryModel.find({}, { id: 1 }).lean();
+      let maxIdNumber = 0;
+      for (const doc of docs) {
+        const match = doc.id.match(/^ENQ-(\d+)$/i);
+        if (match) {
+          const num = parseInt(match[1], 10);
+          if (!isNaN(num) && num > maxIdNumber) {
+            maxIdNumber = num;
+          }
+        }
+      }
+
+      const startNumber = maxIdNumber > 0 ? maxIdNumber + 1 : 1001;
+      let candidateNumber = startNumber;
+      let candidateId = `ENQ-${candidateNumber}`;
+
+      while (await EnquiryModel.exists({ id: candidateId })) {
+        candidateNumber++;
+        candidateId = `ENQ-${candidateNumber}`;
+      }
+
+      return candidateId;
+    }
+
+    // Fallback ID generation if called in offline mode
     let maxIdNumber = 0;
-    for (const enquiry of this.enquiries) {
+    for (const enquiry of this.fallbackEnquiries) {
       const match = enquiry.id.match(/^ENQ-(\d+)$/i);
       if (match) {
         const num = parseInt(match[1], 10);
@@ -50,36 +135,30 @@ class EnquiryRepository {
         }
       }
     }
-
     const startNumber = maxIdNumber > 0 ? maxIdNumber + 1 : 1001;
-    let candidateNumber = startNumber;
-    let candidateId = `ENQ-${candidateNumber}`;
-
-    // Collision safety guarantee
-    while (this.enquiries.some((e) => e.id.toLowerCase() === candidateId.toLowerCase())) {
-      candidateNumber++;
-      candidateId = `ENQ-${candidateNumber}`;
-    }
-
-    return candidateId;
+    return `ENQ-${startNumber}`;
   }
 
   /**
-   * Create a new customer enquiry
+   * Create a new customer enquiry.
    *
-   * - Generates a unique ENQ-XXXX ID.
-   * - Sets receivedTime (defaults to 'Just now' if omitted).
-   * - Sets default status ('Awaiting Review') and urgency ('Standard') if not specified.
-   * - Prepends the new record so newest enquiries appear first.
+   * - Persists record in MongoDB when database is connected.
+   * - If database is offline, throws DatabaseUnavailableError to avoid false claims of persistence.
    */
-  public create(dto: CreateEnquiryDTO): CustomerEnquiry {
-    const id = this.generateNextId();
+  public async create(dto: CreateEnquiryDTO): Promise<CustomerEnquiry> {
+    if (!this.isConnected()) {
+      throw new DatabaseUnavailableError(
+        'Database is unavailable. Cannot persist new enquiry while database is disconnected.'
+      );
+    }
+
+    const id = await this.generateNextId();
     const receivedTime = dto.receivedTime?.trim() || 'Just now';
     const status: EnquiryStatus = dto.status || 'Awaiting Review';
     const urgency = dto.urgency || 'Standard';
     const suggestedReply = dto.suggestedReply?.trim() || '';
 
-    const newEnquiry: CustomerEnquiry = {
+    const createdDoc = await EnquiryModel.create({
       id,
       customerName: dto.customerName.trim(),
       serviceCategory: dto.serviceCategory.trim(),
@@ -90,28 +169,40 @@ class EnquiryRepository {
       urgency,
       message: dto.message.trim(),
       suggestedReply,
-    };
+    });
 
-    this.enquiries.unshift(newEnquiry);
-    return { ...newEnquiry };
+    return this.toCustomerEnquiry(createdDoc);
   }
 
   /**
-   * Update the status of an existing enquiry by ID
+   * Update the status of an existing enquiry by ID.
    *
-   * Updates the in-memory record and returns the updated enquiry copy.
-   * Returns undefined if the enquiry does not exist.
+   * - Persists status in MongoDB when database is connected.
+   * - If database is offline, throws DatabaseUnavailableError.
+   * - Returns undefined if the record does not exist.
    */
-  public updateStatus(id: string, status: EnquiryStatus): CustomerEnquiry | undefined {
-    const enquiry = this.findById(id);
-    if (!enquiry) {
+  public async updateStatus(id: string, status: EnquiryStatus): Promise<CustomerEnquiry | undefined> {
+    if (!this.isConnected()) {
+      throw new DatabaseUnavailableError(
+        'Database is unavailable. Cannot update enquiry status while database is disconnected.'
+      );
+    }
+
+    const trimmedId = id.trim();
+    const escaped = trimmedId.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+
+    const updatedDoc = await EnquiryModel.findOneAndUpdate(
+      { id: { $regex: new RegExp(`^${escaped}$`, 'i') } },
+      { $set: { status } },
+      { new: true }
+    ).lean();
+
+    if (!updatedDoc) {
       return undefined;
     }
 
-    enquiry.status = status;
-    return { ...enquiry };
+    return this.toCustomerEnquiry(updatedDoc);
   }
 }
 
 export const enquiryRepository = new EnquiryRepository();
-

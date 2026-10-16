@@ -30,6 +30,8 @@ interface EnquiryDetailModalProps {
   statusError: string | null;
   /** 'api' when live data is loaded; 'demo' when server was offline. */
   dataSource: 'api' | 'demo';
+  /** 'connected' | 'disconnected' | string indicating MongoDB state. */
+  databaseStatus?: string;
 }
 
 export function EnquiryDetailModal({
@@ -39,6 +41,7 @@ export function EnquiryDetailModal({
   statusUpdating,
   statusError,
   dataSource,
+  databaseStatus,
 }: EnquiryDetailModalProps) {
   const [feedback, setFeedback] = useState<{ text: string; ok: boolean } | null>(null);
 
@@ -312,7 +315,7 @@ export function EnquiryDetailModal({
             </div>
           </div>
 
-          {/* Persistence notice — accurate per data source */}
+          {/* Persistence notice — accurate per data source and database connection */}
           <div className="p-3.5 rounded-xl bg-surface-bg border border-surface-muted flex items-start space-x-2.5 text-xs text-content-secondary">
             <AlertCircle className="w-4 h-4 text-brand-teal flex-shrink-0 mt-0.5" />
             <div className="space-y-0.5">
@@ -327,16 +330,26 @@ export function EnquiryDetailModal({
                     reset on page reload.
                   </p>
                 </>
-              ) : (
+              ) : databaseStatus === 'connected' ? (
                 <>
                   <span className="font-semibold text-content-primary">
-                    In-Memory Server Storage:
+                    MongoDB Persistent Storage:
                   </span>
                   <p className="leading-relaxed">
                     Status changes are sent to and confirmed by the Express API (
-                    <code className="font-mono">PATCH /api/enquiries/:id/status</code>). The UI
-                    updates from the server response. Data is held in-memory and resets when the
-                    server restarts (database persistence is scheduled for a future phase).
+                    <code className="font-mono">PATCH /api/enquiries/:id/status</code>). The updated
+                    record is stored in MongoDB and persists across server restarts.
+                  </p>
+                </>
+              ) : (
+                <>
+                  <span className="font-semibold text-content-primary">
+                    Standby Mode (Database Offline):
+                  </span>
+                  <p className="leading-relaxed">
+                    The Express API is running in standby mode without an active MongoDB connection.
+                    Enquiries are displayed in read-only mode; status changes cannot be persisted
+                    until MongoDB is connected.
                   </p>
                 </>
               )}

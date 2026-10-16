@@ -21,6 +21,7 @@ interface EnquiryWorkspaceProps {
   onBackToLanding: () => void;
   onOpenDiagnostics: () => void;
   backendStatus: 'healthy' | 'offline' | 'checking';
+  databaseStatus?: string;
 }
 
 type DataSource = 'api' | 'demo';
@@ -29,6 +30,7 @@ export function EnquiryWorkspace({
   onBackToLanding,
   onOpenDiagnostics,
   backendStatus,
+  databaseStatus,
 }: EnquiryWorkspaceProps) {
   // ----------------------------------------------------------------
   // Data state
@@ -228,16 +230,21 @@ export function EnquiryWorkspace({
 
             {/* Header Right Actions */}
             <div className="flex items-center space-x-3">
-              {/* Data source indicator */}
+              {/* Data source & database connection indicator */}
               {dataSource === 'demo' ? (
                 <span className="hidden md:inline-flex items-center space-x-1.5 text-xs text-amber-700 bg-amber-50 px-2.5 py-1 rounded-lg border border-amber-200">
                   <WifiOff className="w-3.5 h-3.5 text-amber-500" />
                   <span>Demo Mode (Server Offline)</span>
                 </span>
-              ) : loadState === 'ready' ? (
+              ) : databaseStatus === 'connected' ? (
                 <span className="hidden md:inline-flex items-center space-x-1.5 text-xs text-emerald-700 bg-emerald-50 px-2.5 py-1 rounded-lg border border-emerald-200">
                   <Wifi className="w-3.5 h-3.5 text-emerald-500" />
-                  <span>Live API Data</span>
+                  <span>MongoDB Connected</span>
+                </span>
+              ) : loadState === 'ready' ? (
+                <span className="hidden md:inline-flex items-center space-x-1.5 text-xs text-amber-700 bg-amber-50 px-2.5 py-1 rounded-lg border border-amber-200">
+                  <Wifi className="w-3.5 h-3.5 text-amber-500" />
+                  <span>API Live (DB Standby)</span>
                 </span>
               ) : null}
 
@@ -416,6 +423,7 @@ export function EnquiryWorkspace({
         statusUpdating={statusUpdating}
         statusError={statusError}
         dataSource={dataSource}
+        databaseStatus={databaseStatus}
       />
     </div>
   );
