@@ -1,13 +1,11 @@
 import { useState } from 'react';
-import { Sparkles, Menu, X, Activity, ArrowRight, Github } from 'lucide-react';
+import { Sparkles, Menu, X, ArrowRight } from 'lucide-react';
 
 interface NavbarProps {
-  onOpenDiagnostics: () => void;
   onOpenGetStarted: () => void;
-  backendStatus: 'healthy' | 'offline' | 'checking';
 }
 
-export function Navbar({ onOpenDiagnostics, onOpenGetStarted, backendStatus }: NavbarProps) {
+export function Navbar({ onOpenGetStarted }: NavbarProps) {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   const navLinks = [
@@ -56,49 +54,6 @@ export function Navbar({ onOpenDiagnostics, onOpenGetStarted, backendStatus }: N
 
           {/* Desktop Actions */}
           <div className="hidden md:flex items-center space-x-3">
-            {/* System Status Pill (Developer Diagnostics) */}
-            <button
-              onClick={onOpenDiagnostics}
-              className="inline-flex items-center space-x-2 px-2.5 py-1.5 rounded-lg border border-surface-muted hover:border-brand-teal/40 bg-surface-bg text-content-secondary hover:text-brand-teal text-xs font-medium transition-all"
-              title="Open System Diagnostics"
-              id="nav-diagnostics-btn"
-            >
-              <span className="relative flex h-2 w-2">
-                <span
-                  className={`animate-ping absolute inline-flex h-full w-full rounded-full opacity-75 ${
-                    backendStatus === 'healthy'
-                      ? 'bg-emerald-400'
-                      : backendStatus === 'offline'
-                      ? 'bg-rose-400'
-                      : 'bg-amber-400'
-                  }`}
-                />
-                <span
-                  className={`relative inline-flex rounded-full h-2 w-2 ${
-                    backendStatus === 'healthy'
-                      ? 'bg-emerald-500'
-                      : backendStatus === 'offline'
-                      ? 'bg-rose-500'
-                      : 'bg-amber-500'
-                  }`}
-                />
-              </span>
-              <Activity className="h-3.5 w-3.5" />
-              <span className="hidden lg:inline">Diagnostics</span>
-            </button>
-
-            {/* GitHub Link */}
-            <a
-              href="https://github.com/samatha-93/serviceflow-ai"
-              target="_blank"
-              rel="noreferrer"
-              className="p-2 text-content-secondary hover:text-brand-teal rounded-lg hover:bg-surface-bg transition-colors"
-              title="View on GitHub"
-              aria-label="View on GitHub"
-            >
-              <Github className="h-4 w-4" />
-            </a>
-
             {/* Sign In Button (Informative modal, no fake auth) */}
             <button
               onClick={onOpenGetStarted}
@@ -121,14 +76,6 @@ export function Navbar({ onOpenDiagnostics, onOpenGetStarted, backendStatus }: N
 
           {/* Mobile Menu Toggle Button */}
           <div className="flex md:hidden items-center space-x-2">
-            <button
-              onClick={onOpenDiagnostics}
-              className="p-2 rounded-lg border border-surface-muted bg-surface-bg text-content-secondary"
-              title="Diagnostics"
-              aria-label="Open System Diagnostics"
-            >
-              <Activity className="h-4 w-4 text-brand-teal" />
-            </button>
             <button
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
               className="p-2 rounded-lg text-content-primary hover:bg-surface-muted transition-colors"

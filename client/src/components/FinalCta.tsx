@@ -1,4 +1,4 @@
-import { ArrowRight, Github, Sparkles } from 'lucide-react';
+import { ArrowRight, Sparkles } from 'lucide-react';
 
 interface FinalCtaProps {
   onCtaClick: () => void;
@@ -41,19 +41,12 @@ export function FinalCta({ onCtaClick }: FinalCtaProps) {
           </button>
 
           <a
-            href="https://github.com/samatha-93/serviceflow-ai"
-            target="_blank"
-            rel="noreferrer"
+            href="#how-it-works"
             className="w-full sm:w-auto inline-flex items-center justify-center space-x-2 px-6 py-4 rounded-xl border border-surface-muted bg-surface-bg hover:bg-surface-card text-content-primary font-semibold text-base shadow-soft transition-all"
-            id="final-github-btn"
+            id="final-how-it-works-btn"
           >
-            <Github className="w-5 h-5 text-content-secondary" />
-            <span>GitHub Repository</span>
+            <span>See How It Works</span>
           </a>
-        </div>
-
-        <div className="pt-4 text-xs text-content-muted">
-          Active open-source foundation • Phase 1 Core Architecture
         </div>
       </div>
     </section>

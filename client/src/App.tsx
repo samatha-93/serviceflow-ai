@@ -62,11 +62,7 @@ export default function App() {
   return (
     <div className="min-h-screen bg-surface-bg text-content-primary flex flex-col font-sans selection:bg-brand-teal selection:text-white">
       {/* 1. Navigation */}
-      <Navbar
-        onOpenDiagnostics={() => setDiagnosticsOpen(true)}
-        onOpenGetStarted={() => setGetStartedOpen(true)}
-        backendStatus={backendStatus}
-      />
+      <Navbar onOpenGetStarted={() => setGetStartedOpen(true)} />
 
       {/* Main Content */}
       <main className="flex-1 w-full" id="main-content">

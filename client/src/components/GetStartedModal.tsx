@@ -1,5 +1,5 @@
 import { useEffect } from 'react';
-import { X, Sparkles, CheckCircle2, ArrowRight, Github } from 'lucide-react';
+import { X, Sparkles, CheckCircle2, ArrowRight } from 'lucide-react';
 
 interface GetStartedModalProps {
   isOpen: boolean;
@@ -51,9 +51,8 @@ export function GetStartedModal({ isOpen, onClose, onExploreDemo }: GetStartedMo
               Welcome to ServiceFlow AI
             </h3>
             <p className="text-sm text-content-secondary leading-relaxed pt-1">
-              ServiceFlow AI is currently in active Phase 1 foundation development. Rather than
-              requiring an account, you can explore the complete interactive dashboard preview
-              directly on this page.
+              ServiceFlow AI is currently in active early access preview. You can explore the complete
+              interactive dashboard preview directly on this page.
             </p>
           </div>
 
@@ -90,20 +89,17 @@ export function GetStartedModal({ isOpen, onClose, onExploreDemo }: GetStartedMo
               <ArrowRight className="w-4 h-4" />
             </button>
 
-            <a
-              href="https://github.com/samatha-93/serviceflow-ai"
-              target="_blank"
-              rel="noreferrer"
-              className="inline-flex items-center justify-center space-x-2 py-3 px-4 rounded-xl border border-surface-muted bg-surface-bg hover:bg-surface-card text-content-primary font-semibold text-sm transition-colors"
+            <button
+              onClick={onClose}
+              className="py-3 px-5 rounded-xl border border-surface-muted bg-surface-bg hover:bg-surface-card text-content-primary font-semibold text-sm transition-colors"
             >
-              <Github className="w-4 h-4 text-content-secondary" />
-              <span>GitHub</span>
-            </a>
+              <span>Close</span>
+            </button>
           </div>
         </div>
 
         <div className="px-6 py-3 bg-surface-bg/80 border-t border-surface-muted text-center text-xs text-content-muted">
-          No credit card or registration needed during Phase 1 Foundation preview.
+          No credit card or registration needed during the interactive preview.
         </div>
       </div>
     </div>

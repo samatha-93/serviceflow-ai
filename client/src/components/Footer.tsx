@@ -1,4 +1,4 @@
-import { Sparkles, Github, ExternalLink, Activity, ArrowUp } from 'lucide-react';
+import { Sparkles, ArrowUp } from 'lucide-react';
 
 interface FooterProps {
   onOpenDiagnostics: () => void;
@@ -12,15 +12,15 @@ export function Footer({ onOpenDiagnostics, backendStatus }: FooterProps) {
 
   return (
     <footer className="border-t border-surface-muted bg-surface-card text-content-primary">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 sm:py-16">
-        <div className="grid grid-cols-1 md:grid-cols-12 gap-10">
-          {/* Brand & Mission Column */}
-          <div className="md:col-span-5 space-y-4">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 sm:py-14">
+        <div className="flex flex-col md:flex-row md:items-start justify-between gap-8">
+          {/* Brand & Product Description */}
+          <div className="space-y-3 max-w-md">
             <div className="flex items-center space-x-2.5">
-              <div className="h-9 w-9 rounded-xl bg-brand-teal text-white flex items-center justify-center shadow-soft">
-                <Sparkles className="h-5 w-5" />
+              <div className="h-8 w-8 rounded-xl bg-brand-teal text-white flex items-center justify-center shadow-soft">
+                <Sparkles className="h-4 w-4" />
               </div>
-              <span className="font-bold text-xl tracking-tight">
+              <span className="font-bold text-lg tracking-tight">
                 ServiceFlow <span className="text-brand-teal">AI</span>
               </span>
             </div>
@@ -29,31 +29,17 @@ export function Footer({ onOpenDiagnostics, backendStatus }: FooterProps) {
               Less Admin. Better Business.
             </p>
 
-            <p className="text-xs text-content-secondary leading-relaxed max-w-sm">
+            <p className="text-xs text-content-secondary leading-relaxed">
               The intelligent operating core for service businesses. Manage customer enquiries,
               coordinate bookings, and streamline administrative tasks with human-in-the-loop AI
               assistance.
             </p>
-
-            <div className="pt-2 flex items-center space-x-3">
-              <a
-                href="https://github.com/samatha-93/serviceflow-ai"
-                target="_blank"
-                rel="noreferrer"
-                className="inline-flex items-center space-x-1.5 text-xs font-semibold text-content-secondary hover:text-brand-teal transition-colors"
-                id="footer-github-link"
-              >
-                <Github className="w-4 h-4" />
-                <span>samatha-93/serviceflow-ai</span>
-                <ExternalLink className="w-3 h-3 ml-0.5 text-content-muted" />
-              </a>
-            </div>
           </div>
 
-          {/* Product Links */}
-          <div className="md:col-span-3 space-y-3">
+          {/* Product Navigation Links */}
+          <div className="space-y-3">
             <h4 className="text-xs font-bold uppercase tracking-wider text-content-primary">
-              Navigation
+              Product
             </h4>
             <ul className="space-y-2 text-sm text-content-secondary">
               <li>
@@ -68,57 +54,36 @@ export function Footer({ onOpenDiagnostics, backendStatus }: FooterProps) {
               </li>
               <li>
                 <a href="#services" className="hover:text-brand-teal transition-colors">
-                  Service Verticals
-                </a>
-              </li>
-              <li>
-                <a href="#hero-section" className="hover:text-brand-teal transition-colors">
-                  Interactive Preview
+                  Services
                 </a>
               </li>
             </ul>
           </div>
-
-          {/* Architecture & Engineering Links */}
-          <div className="md:col-span-4 space-y-3">
-            <h4 className="text-xs font-bold uppercase tracking-wider text-content-primary">
-              Engineering & Diagnostics
-            </h4>
-            <p className="text-xs text-content-secondary leading-relaxed">
-              ServiceFlow AI is engineered as a clean TypeScript monorepo with an Express API and
-              Vite React frontend.
-            </p>
-
-            <div className="pt-1">
-              <button
-                onClick={onOpenDiagnostics}
-                className="inline-flex items-center space-x-2 text-xs font-semibold px-3 py-2 rounded-lg border border-surface-muted hover:border-brand-teal/40 bg-surface-bg text-content-primary hover:text-brand-teal transition-all"
-                id="footer-diagnostics-btn"
-              >
-                <Activity className="w-3.5 h-3.5 text-brand-teal" />
-                <span>Backend System Diagnostics</span>
-                <span
-                  className={`w-2 h-2 rounded-full ml-1 ${
-                    backendStatus === 'healthy'
-                      ? 'bg-emerald-500'
-                      : backendStatus === 'offline'
-                      ? 'bg-rose-500'
-                      : 'bg-amber-500'
-                  }`}
-                />
-              </button>
-            </div>
-          </div>
         </div>
 
         {/* Bottom Sub-footer */}
-        <div className="mt-12 pt-6 border-t border-surface-muted flex flex-col sm:flex-row items-center justify-between text-xs text-content-secondary gap-4">
+        <div className="mt-10 pt-6 border-t border-surface-muted flex flex-col sm:flex-row items-center justify-between text-xs text-content-secondary gap-4">
           <div className="flex items-center space-x-3">
             <span>© {new Date().getFullYear()} ServiceFlow AI.</span>
             <span>•</span>
-            <span>MIT License</span>
-            <span>•</span>
-            <span className="text-content-muted">Phase 1 Foundation</span>
+            {/* Unobtrusive developer status / diagnostics trigger */}
+            <button
+              onClick={onOpenDiagnostics}
+              className="inline-flex items-center space-x-1.5 text-content-muted hover:text-brand-teal transition-colors focus-visible:outline-brand-teal rounded px-1"
+              title="System Diagnostics (Dev)"
+              id="footer-diagnostics-btn"
+            >
+              <span
+                className={`w-1.5 h-1.5 rounded-full ${
+                  backendStatus === 'healthy'
+                    ? 'bg-emerald-500'
+                    : backendStatus === 'offline'
+                    ? 'bg-rose-500'
+                    : 'bg-amber-500'
+                }`}
+              />
+              <span>System Status</span>
+            </button>
           </div>
 
           <button
