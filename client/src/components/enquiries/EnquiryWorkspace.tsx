@@ -1,12 +1,17 @@
-import { useState, useMemo } from 'react';
+import { useState, useEffect, useMemo, useCallback } from 'react';
 import {
   Sparkles,
   ArrowLeft,
   Inbox,
-  ShieldCheck,
+  Wifi,
+  WifiOff,
+  RefreshCw,
+  AlertTriangle,
+  Loader2,
 } from 'lucide-react';
 import { CustomerEnquiry } from '../../types';
 import { DEMO_ENQUIRIES } from '../../data/mockEnquiries';
+import { fetchEnquiries, patchEnquiryStatus, ApiError } from '../../services/enquiry.api';
 import { EnquiryMetrics } from './EnquiryMetrics';
 import { EnquiryFilters } from './EnquiryFilters';
 import { EnquiryTable } from './EnquiryTable';
@@ -18,33 +23,141 @@ interface EnquiryWorkspaceProps {
   backendStatus: 'healthy' | 'offline' | 'checking';
 }
 
+type DataSource = 'api' | 'demo';
+
 export function EnquiryWorkspace({
   onBackToLanding,
   onOpenDiagnostics,
   backendStatus,
 }: EnquiryWorkspaceProps) {
-  const [enquiries, setEnquiries] = useState<CustomerEnquiry[]>(DEMO_ENQUIRIES);
+  // ----------------------------------------------------------------
+  // Data state
+  // ----------------------------------------------------------------
+  const [enquiries, setEnquiries] = useState<CustomerEnquiry[]>([]);
+  const [dataSource, setDataSource] = useState<DataSource>('api');
+  const [loadState, setLoadState] = useState<'loading' | 'error' | 'empty' | 'ready'>('loading');
+  const [loadError, setLoadError] = useState<string | null>(null);
+
+  // ----------------------------------------------------------------
+  // Detail modal state
+  // ----------------------------------------------------------------
   const [selectedEnquiry, setSelectedEnquiry] = useState<CustomerEnquiry | null>(null);
 
-  // Status update handler: updates in-memory list and selected item
-  const handleUpdateStatus = (enquiryId: string, newStatus: CustomerEnquiry['status']) => {
-    setEnquiries((prev) =>
-      prev.map((item) => (item.id === enquiryId ? { ...item, status: newStatus } : item))
-    );
-    setSelectedEnquiry((prev) =>
-      prev && prev.id === enquiryId ? { ...prev, status: newStatus } : prev
-    );
-  };
+  // ----------------------------------------------------------------
+  // Status-update state
+  // ----------------------------------------------------------------
+  const [statusUpdating, setStatusUpdating] = useState(false);
+  const [statusError, setStatusError] = useState<string | null>(null);
 
-  // Filter states
+  // ----------------------------------------------------------------
+  // Filters
+  // ----------------------------------------------------------------
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState('ALL');
   const [categoryFilter, setCategoryFilter] = useState('ALL');
   const [urgencyFilter, setUrgencyFilter] = useState('ALL');
 
+  // ----------------------------------------------------------------
+  // Load enquiries from API (with demo fallback when truly offline)
+  // ----------------------------------------------------------------
+  const loadEnquiries = useCallback(async () => {
+    setLoadState('loading');
+    setLoadError(null);
+
+    try {
+      const data = await fetchEnquiries();
+      setEnquiries(data);
+      setDataSource('api');
+      setLoadState(data.length === 0 ? 'empty' : 'ready');
+    } catch (err) {
+      // Only fall back to demo data when the server is verifiably offline
+      // (network error / ECONNREFUSED). HTTP errors from the server are shown
+      // as real errors rather than silently hidden behind demo data.
+      const isNetworkError = !(err instanceof ApiError);
+
+      if (isNetworkError && (backendStatus === 'offline' || backendStatus === 'checking')) {
+        // Backend is confirmed offline or unreachable: show demo data with a clear notice
+        setEnquiries(DEMO_ENQUIRIES);
+        setDataSource('demo');
+        setLoadState('ready');
+      } else {
+        setLoadState('error');
+        const message =
+          err instanceof ApiError
+            ? `API error ${err.statusCode}: ${err.serverMessage}`
+            : err instanceof Error
+            ? err.message
+            : 'Failed to load enquiries from the server.';
+        setLoadError(message);
+      }
+    }
+  }, [backendStatus]);
+
+  useEffect(() => {
+    loadEnquiries();
+  }, [loadEnquiries]);
+
+  // When backend becomes healthy after having been offline, automatically upgrade to live data
+  useEffect(() => {
+    if (backendStatus === 'healthy' && dataSource === 'demo') {
+      loadEnquiries();
+    }
+  }, [backendStatus, dataSource, loadEnquiries]);
+
+  // ----------------------------------------------------------------
+  // Status update — calls PATCH and updates UI from the API response
+  // ----------------------------------------------------------------
+  const handleUpdateStatus = useCallback(
+    async (enquiryId: string, newStatus: CustomerEnquiry['status']) => {
+      setStatusUpdating(true);
+      setStatusError(null);
+
+      try {
+        if (dataSource === 'demo') {
+          // Demo mode: apply optimistic local update only (no real API call)
+          setEnquiries((prev) =>
+            prev.map((item) => (item.id === enquiryId ? { ...item, status: newStatus } : item))
+          );
+          setSelectedEnquiry((prev) =>
+            prev && prev.id === enquiryId ? { ...prev, status: newStatus } : prev
+          );
+          return { success: true, message: `Status updated to "${newStatus}" (demo mode).` };
+        }
+
+        // Live API call
+        const updated = await patchEnquiryStatus(enquiryId, newStatus);
+
+        // Update list from the server response
+        setEnquiries((prev) =>
+          prev.map((item) => (item.id === enquiryId ? updated : item))
+        );
+        // Update modal from the server response
+        setSelectedEnquiry((prev) =>
+          prev && prev.id === enquiryId ? updated : prev
+        );
+
+        return { success: true, message: `Status updated to "${updated.status}".` };
+      } catch (err) {
+        const message =
+          err instanceof ApiError
+            ? `Could not update status: ${err.serverMessage} (HTTP ${err.statusCode})`
+            : err instanceof Error
+            ? `Could not update status: ${err.message}`
+            : 'Status update failed. Please try again.';
+        setStatusError(message);
+        return { success: false, message };
+      } finally {
+        setStatusUpdating(false);
+      }
+    },
+    [dataSource]
+  );
+
+  // ----------------------------------------------------------------
+  // Filtered enquiries (client-side)
+  // ----------------------------------------------------------------
   const filteredEnquiries = useMemo(() => {
     return enquiries.filter((item) => {
-      // Search matching across multiple fields
       if (searchQuery.trim() !== '') {
         const query = searchQuery.toLowerCase();
         const matchesQuery =
@@ -54,25 +167,11 @@ export function EnquiryWorkspace({
           item.location.toLowerCase().includes(query) ||
           item.message.toLowerCase().includes(query) ||
           item.id.toLowerCase().includes(query);
-
         if (!matchesQuery) return false;
       }
-
-      // Status filter
-      if (statusFilter !== 'ALL' && item.status !== statusFilter) {
-        return false;
-      }
-
-      // Category filter
-      if (categoryFilter !== 'ALL' && item.serviceCategory !== categoryFilter) {
-        return false;
-      }
-
-      // Urgency filter
-      if (urgencyFilter !== 'ALL' && item.urgency !== urgencyFilter) {
-        return false;
-      }
-
+      if (statusFilter !== 'ALL' && item.status !== statusFilter) return false;
+      if (categoryFilter !== 'ALL' && item.serviceCategory !== categoryFilter) return false;
+      if (urgencyFilter !== 'ALL' && item.urgency !== urgencyFilter) return false;
       return true;
     });
   }, [enquiries, searchQuery, statusFilter, categoryFilter, urgencyFilter]);
@@ -90,6 +189,9 @@ export function EnquiryWorkspace({
     categoryFilter !== 'ALL' ||
     urgencyFilter !== 'ALL';
 
+  // ----------------------------------------------------------------
+  // Render
+  // ----------------------------------------------------------------
   return (
     <div className="min-h-screen bg-surface-bg text-content-primary flex flex-col font-sans selection:bg-brand-teal selection:text-white">
       {/* Workspace Top Application Bar */}
@@ -126,11 +228,18 @@ export function EnquiryWorkspace({
 
             {/* Header Right Actions */}
             <div className="flex items-center space-x-3">
-              {/* Demo Mode Notice */}
-              <span className="hidden md:inline-flex items-center space-x-1.5 text-xs text-content-muted bg-surface-bg px-2.5 py-1 rounded-lg border border-surface-muted">
-                <ShieldCheck className="w-3.5 h-3.5 text-brand-teal" />
-                <span>UI Demo Mode</span>
-              </span>
+              {/* Data source indicator */}
+              {dataSource === 'demo' ? (
+                <span className="hidden md:inline-flex items-center space-x-1.5 text-xs text-amber-700 bg-amber-50 px-2.5 py-1 rounded-lg border border-amber-200">
+                  <WifiOff className="w-3.5 h-3.5 text-amber-500" />
+                  <span>Demo Mode (Server Offline)</span>
+                </span>
+              ) : loadState === 'ready' ? (
+                <span className="hidden md:inline-flex items-center space-x-1.5 text-xs text-emerald-700 bg-emerald-50 px-2.5 py-1 rounded-lg border border-emerald-200">
+                  <Wifi className="w-3.5 h-3.5 text-emerald-500" />
+                  <span>Live API Data</span>
+                </span>
+              ) : null}
 
               {/* Back to Website Button */}
               <button
@@ -169,31 +278,95 @@ export function EnquiryWorkspace({
           </div>
         </div>
 
-        {/* 1. Summary Metrics Cards */}
-        <EnquiryMetrics enquiries={enquiries} />
+        {/* ── Loading state ── */}
+        {loadState === 'loading' && (
+          <div className="bg-surface-card rounded-2xl border border-surface-muted p-16 text-center flex flex-col items-center space-y-4 shadow-soft">
+            <Loader2 className="w-10 h-10 text-brand-teal animate-spin" />
+            <p className="text-sm font-medium text-content-secondary">
+              Loading enquiries from API…
+            </p>
+          </div>
+        )}
 
-        {/* 2. Filter Toolbar */}
-        <EnquiryFilters
-          searchQuery={searchQuery}
-          onSearchChange={setSearchQuery}
-          statusFilter={statusFilter}
-          onStatusChange={setStatusFilter}
-          categoryFilter={categoryFilter}
-          onCategoryChange={setCategoryFilter}
-          urgencyFilter={urgencyFilter}
-          onUrgencyChange={setUrgencyFilter}
-          onResetFilters={handleResetFilters}
-          totalCount={enquiries.length}
-          filteredCount={filteredEnquiries.length}
-        />
+        {/* ── Error state ── */}
+        {loadState === 'error' && (
+          <div className="bg-rose-50 border border-rose-200 rounded-2xl p-8 text-center space-y-4 shadow-soft" role="alert">
+            <div className="flex justify-center">
+              <div className="h-14 w-14 rounded-2xl bg-rose-100 border border-rose-200 flex items-center justify-center">
+                <AlertTriangle className="w-7 h-7 text-rose-500" />
+              </div>
+            </div>
+            <div className="space-y-1.5 max-w-md mx-auto">
+              <h3 className="text-base font-bold text-rose-800">Failed to load enquiries</h3>
+              <p className="text-sm text-rose-700 leading-relaxed font-mono break-words">
+                {loadError}
+              </p>
+            </div>
+            <button
+              onClick={loadEnquiries}
+              className="inline-flex items-center space-x-2 px-5 py-2.5 rounded-xl bg-rose-600 text-white hover:bg-rose-700 text-sm font-semibold shadow-soft transition-all"
+            >
+              <RefreshCw className="w-4 h-4" />
+              <span>Retry</span>
+            </button>
+          </div>
+        )}
 
-        {/* 3. Enquiry Table & Cards */}
-        <EnquiryTable
-          enquiries={filteredEnquiries}
-          onSelectEnquiry={setSelectedEnquiry}
-          onResetFilters={handleResetFilters}
-          hasFilters={hasActiveFilters}
-        />
+        {/* ── Loaded (ready or empty) ── */}
+        {(loadState === 'ready' || loadState === 'empty') && (
+          <>
+            {/* Demo data notice — only shown when server is offline */}
+            {dataSource === 'demo' && (
+              <div
+                role="status"
+                className="flex items-start space-x-3 p-4 rounded-xl bg-amber-50 border border-amber-200 text-sm text-amber-800"
+              >
+                <WifiOff className="w-5 h-5 text-amber-500 flex-shrink-0 mt-0.5" />
+                <div className="space-y-0.5">
+                  <span className="font-semibold text-amber-900">Server offline — showing demo data</span>
+                  <p className="text-xs leading-relaxed text-amber-700">
+                    The backend API could not be reached. Displaying read-only sample enquiries for
+                    demonstration purposes. Status updates will apply locally only and will not
+                    persist. Start the server and{' '}
+                    <button
+                      onClick={loadEnquiries}
+                      className="underline font-semibold hover:text-amber-900"
+                    >
+                      reload
+                    </button>{' '}
+                    to connect to live data.
+                  </p>
+                </div>
+              </div>
+            )}
+
+            {/* 1. Summary Metrics Cards */}
+            <EnquiryMetrics enquiries={enquiries} />
+
+            {/* 2. Filter Toolbar */}
+            <EnquiryFilters
+              searchQuery={searchQuery}
+              onSearchChange={setSearchQuery}
+              statusFilter={statusFilter}
+              onStatusChange={setStatusFilter}
+              categoryFilter={categoryFilter}
+              onCategoryChange={setCategoryFilter}
+              urgencyFilter={urgencyFilter}
+              onUrgencyChange={setUrgencyFilter}
+              onResetFilters={handleResetFilters}
+              totalCount={enquiries.length}
+              filteredCount={filteredEnquiries.length}
+            />
+
+            {/* 3. Enquiry Table & Cards */}
+            <EnquiryTable
+              enquiries={filteredEnquiries}
+              onSelectEnquiry={setSelectedEnquiry}
+              onResetFilters={handleResetFilters}
+              hasFilters={hasActiveFilters}
+            />
+          </>
+        )}
       </main>
 
       {/* Workspace Sub-Footer */}
@@ -202,7 +375,9 @@ export function EnquiryWorkspace({
           <div className="flex items-center space-x-3">
             <span>© {new Date().getFullYear()} ServiceFlow AI.</span>
             <span>•</span>
-            <span className="text-content-muted">Phase 3 Step 2: Enquiry Status Operations (In-Memory)</span>
+            <span className="text-content-muted">
+              Phase 3 Step 3D: Frontend-Backend API Integration
+            </span>
           </div>
 
           <div className="flex items-center space-x-4">
@@ -237,11 +412,10 @@ export function EnquiryWorkspace({
       <EnquiryDetailModal
         enquiry={selectedEnquiry}
         onClose={() => setSelectedEnquiry(null)}
-        onUpdateStatus={(newStatus) => {
-          if (selectedEnquiry) {
-            handleUpdateStatus(selectedEnquiry.id, newStatus);
-          }
-        }}
+        onUpdateStatus={handleUpdateStatus}
+        statusUpdating={statusUpdating}
+        statusError={statusError}
+        dataSource={dataSource}
       />
     </div>
   );

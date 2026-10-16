@@ -9,6 +9,9 @@ import {
   User,
   ShieldCheck,
   CheckCircle2,
+  Loader2,
+  WifiOff,
+  AlertTriangle,
 } from 'lucide-react';
 import { CustomerEnquiry } from '../../types';
 import { ENQUIRY_STATUSES } from '../../data/mockEnquiries';
@@ -16,11 +19,28 @@ import { ENQUIRY_STATUSES } from '../../data/mockEnquiries';
 interface EnquiryDetailModalProps {
   enquiry: CustomerEnquiry | null;
   onClose: () => void;
-  onUpdateStatus: (newStatus: CustomerEnquiry['status']) => void;
+  /** Async handler — returns an object with success flag and user-visible message. */
+  onUpdateStatus: (
+    id: string,
+    newStatus: CustomerEnquiry['status'],
+  ) => Promise<{ success: boolean; message: string }>;
+  /** True while a PATCH request is in flight. */
+  statusUpdating: boolean;
+  /** Non-null when the last status update failed. */
+  statusError: string | null;
+  /** 'api' when live data is loaded; 'demo' when server was offline. */
+  dataSource: 'api' | 'demo';
 }
 
-export function EnquiryDetailModal({ enquiry, onClose, onUpdateStatus }: EnquiryDetailModalProps) {
-  const [feedback, setFeedback] = useState<string | null>(null);
+export function EnquiryDetailModal({
+  enquiry,
+  onClose,
+  onUpdateStatus,
+  statusUpdating,
+  statusError,
+  dataSource,
+}: EnquiryDetailModalProps) {
+  const [feedback, setFeedback] = useState<{ text: string; ok: boolean } | null>(null);
 
   // Clear feedback when selected enquiry changes or modal closes
   useEffect(() => {
@@ -39,10 +59,11 @@ export function EnquiryDetailModal({ enquiry, onClose, onUpdateStatus }: Enquiry
 
   if (!enquiry) return null;
 
-  const handleStatusSelect = (newStatus: CustomerEnquiry['status']) => {
-    if (newStatus === enquiry.status) return;
-    onUpdateStatus(newStatus);
-    setFeedback(`Status updated to "${newStatus}". Stored in session memory.`);
+  const handleStatusSelect = async (newStatus: CustomerEnquiry['status']) => {
+    if (newStatus === enquiry.status || statusUpdating) return;
+    setFeedback(null);
+    const result = await onUpdateStatus(enquiry.id, newStatus);
+    setFeedback({ text: result.message, ok: result.success });
   };
 
   const getStatusBadge = (status: CustomerEnquiry['status']) => {
@@ -121,24 +142,47 @@ export function EnquiryDetailModal({ enquiry, onClose, onUpdateStatus }: Enquiry
 
         {/* Modal Scrollable Content */}
         <div className="p-6 overflow-y-auto space-y-6">
-          {/* Status Feedback Confirmation Banner */}
+          {/* Status Feedback Banner */}
           {feedback && (
             <div
               role="status"
               aria-live="polite"
-              className="p-3.5 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs flex items-center justify-between shadow-xs animate-fadeIn"
+              className={`p-3.5 rounded-xl text-xs flex items-center justify-between shadow-xs animate-fadeIn border ${
+                feedback.ok
+                  ? 'bg-emerald-50 border-emerald-200 text-emerald-800'
+                  : 'bg-rose-50 border-rose-200 text-rose-800'
+              }`}
             >
               <div className="flex items-center space-x-2">
-                <CheckCircle2 className="w-4 h-4 text-emerald-600 flex-shrink-0" />
-                <span className="font-semibold">{feedback}</span>
+                {feedback.ok ? (
+                  <CheckCircle2 className="w-4 h-4 text-emerald-600 flex-shrink-0" />
+                ) : (
+                  <AlertTriangle className="w-4 h-4 text-rose-500 flex-shrink-0" />
+                )}
+                <span className="font-semibold">{feedback.text}</span>
               </div>
               <button
                 onClick={() => setFeedback(null)}
-                className="text-emerald-700 hover:text-emerald-900 p-1 rounded-lg hover:bg-emerald-100 transition-colors"
-                aria-label="Dismiss status notification"
+                className={`p-1 rounded-lg transition-colors ${
+                  feedback.ok
+                    ? 'text-emerald-700 hover:text-emerald-900 hover:bg-emerald-100'
+                    : 'text-rose-700 hover:text-rose-900 hover:bg-rose-100'
+                }`}
+                aria-label="Dismiss notification"
               >
                 <X className="w-3.5 h-3.5" />
               </button>
+            </div>
+          )}
+
+          {/* Persistent status-update error (from parent) */}
+          {statusError && !feedback && (
+            <div
+              role="alert"
+              className="p-3.5 rounded-xl bg-rose-50 border border-rose-200 text-rose-800 text-xs flex items-start space-x-2"
+            >
+              <AlertTriangle className="w-4 h-4 text-rose-500 flex-shrink-0 mt-0.5" />
+              <span className="font-semibold">{statusError}</span>
             </div>
           )}
 
@@ -185,8 +229,20 @@ export function EnquiryDetailModal({ enquiry, onClose, onUpdateStatus }: Enquiry
                 <CheckCircle2 className="w-4 h-4 text-brand-teal" />
                 <span>Change Enquiry Status</span>
               </label>
-              <span className="text-[11px] text-content-muted">
-                Immediate in-memory update
+              <span className="text-[11px] text-content-muted flex items-center space-x-1">
+                {statusUpdating ? (
+                  <>
+                    <Loader2 className="w-3.5 h-3.5 animate-spin text-brand-teal" />
+                    <span>Saving…</span>
+                  </>
+                ) : dataSource === 'demo' ? (
+                  <>
+                    <WifiOff className="w-3.5 h-3.5 text-amber-500" />
+                    <span>Demo — local only</span>
+                  </>
+                ) : (
+                  <span>Saved to server</span>
+                )}
               </span>
             </div>
 
@@ -203,14 +259,22 @@ export function EnquiryDetailModal({ enquiry, onClose, onUpdateStatus }: Enquiry
                     type="button"
                     onClick={() => handleStatusSelect(statusOption)}
                     aria-pressed={isCurrent}
+                    disabled={statusUpdating}
                     className={`flex items-center justify-center space-x-1.5 py-2.5 px-3 rounded-xl text-xs font-semibold border transition-all ${
                       isCurrent
                         ? `${getStatusActiveStyle(statusOption)} cursor-default`
+                        : statusUpdating
+                        ? 'opacity-50 cursor-not-allowed bg-surface-bg border-surface-muted text-content-secondary'
                         : 'bg-white border-surface-muted text-content-secondary hover:text-content-primary hover:border-brand-teal/40 hover:bg-surface-bg shadow-xs active:scale-[0.98]'
                     } focus-visible:outline-brand-teal`}
                     id={`status-btn-${statusOption.toLowerCase().replace(/\s+/g, '-')}`}
                   >
-                    {isCurrent && <CheckCircle2 className="w-3.5 h-3.5 flex-shrink-0" />}
+                    {isCurrent && !statusUpdating && (
+                      <CheckCircle2 className="w-3.5 h-3.5 flex-shrink-0" />
+                    )}
+                    {statusUpdating && isCurrent && (
+                      <Loader2 className="w-3.5 h-3.5 animate-spin flex-shrink-0" />
+                    )}
                     <span>{statusOption}</span>
                   </button>
                 );
@@ -248,17 +312,34 @@ export function EnquiryDetailModal({ enquiry, onClose, onUpdateStatus }: Enquiry
             </div>
           </div>
 
-          {/* In-memory demo notice */}
+          {/* Persistence notice — accurate per data source */}
           <div className="p-3.5 rounded-xl bg-surface-bg border border-surface-muted flex items-start space-x-2.5 text-xs text-content-secondary">
             <AlertCircle className="w-4 h-4 text-brand-teal flex-shrink-0 mt-0.5" />
             <div className="space-y-0.5">
-              <span className="font-semibold text-content-primary">
-                Demo Mode Notice (In-Memory Session Only):
-              </span>
-              <p className="leading-relaxed">
-                Status changes update workspace metrics, list order, and filters immediately in React state.
-                Because backend database persistence is scheduled for future increments, any updates exist only in browser memory and will reset upon page reload.
-              </p>
+              {dataSource === 'demo' ? (
+                <>
+                  <span className="font-semibold text-content-primary">
+                    Demo Mode (Server Offline):
+                  </span>
+                  <p className="leading-relaxed">
+                    Status changes apply locally in React state only. Because the backend API could
+                    not be reached, no changes are sent to or persisted on the server. Updates will
+                    reset on page reload.
+                  </p>
+                </>
+              ) : (
+                <>
+                  <span className="font-semibold text-content-primary">
+                    In-Memory Server Storage:
+                  </span>
+                  <p className="leading-relaxed">
+                    Status changes are sent to and confirmed by the Express API (
+                    <code className="font-mono">PATCH /api/enquiries/:id/status</code>). The UI
+                    updates from the server response. Data is held in-memory and resets when the
+                    server restarts (database persistence is scheduled for a future phase).
+                  </p>
+                </>
+              )}
             </div>
           </div>
         </div>
