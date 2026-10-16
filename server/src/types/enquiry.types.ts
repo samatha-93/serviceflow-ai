@@ -23,8 +23,11 @@ export const isEnquiryUrgency = (value: unknown): value is EnquiryUrgency => {
   return typeof value === 'string' && (VALID_ENQUIRY_URGENCIES as readonly string[]).includes(value);
 };
 
+export const DEMO_TENANT_ID = 'tenant_demo_public';
+
 export interface CustomerEnquiry {
   id: string;
+  businessId?: string;
   customerName: string;
   serviceCategory: string;
   serviceTitle: string;
@@ -37,6 +40,7 @@ export interface CustomerEnquiry {
 }
 
 export interface CreateEnquiryDTO {
+  businessId?: string;
   customerName: string;
   serviceCategory: string;
   serviceTitle: string;

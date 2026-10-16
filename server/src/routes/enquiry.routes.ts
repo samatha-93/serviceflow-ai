@@ -5,20 +5,21 @@ import {
   createEnquiry,
   updateEnquiryStatus,
 } from '../controllers/enquiry.controller';
+import { requireAuth, optionalAuth } from '../middleware/auth.middleware';
 
 const router = Router();
 
-// GET /api/enquiries
-router.get('/', getEnquiries);
+// GET /api/enquiries (optionalAuth: scoped to businessId if authenticated, demo if guest)
+router.get('/', optionalAuth, getEnquiries);
 
-// GET /api/enquiries/:id
-router.get('/:id', getEnquiryById);
+// GET /api/enquiries/:id (optionalAuth: verifies ownership if authenticated, demo if guest)
+router.get('/:id', optionalAuth, getEnquiryById);
 
-// POST /api/enquiries
-router.post('/', createEnquiry);
+// POST /api/enquiries (requireAuth: creates enquiry stamped with caller's businessId)
+router.post('/', requireAuth, createEnquiry);
 
-// PATCH /api/enquiries/:id/status
-router.patch('/:id/status', updateEnquiryStatus);
+// PATCH /api/enquiries/:id/status (requireAuth: ensures only owning business can mutate status)
+router.patch('/:id/status', requireAuth, updateEnquiryStatus);
 
 export default router;
 

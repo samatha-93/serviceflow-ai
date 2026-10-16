@@ -1,6 +1,7 @@
 import express, { Application, Request, Response, NextFunction } from 'express';
 import cors from 'cors';
 import helmet from 'helmet';
+import cookieParser from 'cookie-parser';
 import { config } from './config/env';
 import apiRouter from './routes';
 import { getHealth } from './controllers/health.controller';
@@ -25,9 +26,13 @@ app.use(
   })
 );
 
+// Cookie parser for secure HttpOnly session tokens
+app.use(cookieParser());
+
 // Body parsers
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
+
 
 // Lightweight request logging middleware for development
 app.use((req: Request, _res: Response, next: NextFunction) => {

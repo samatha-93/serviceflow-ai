@@ -1,12 +1,22 @@
 import { useState } from 'react';
-import { Sparkles, Menu, X, ArrowRight, Inbox } from 'lucide-react';
+import { Sparkles, Menu, X, ArrowRight, Inbox, LogOut, UserCheck } from 'lucide-react';
+import { UserProfile } from '../types';
 
 interface NavbarProps {
   onOpenGetStarted: () => void;
   onOpenWorkspace: () => void;
+  currentUser?: UserProfile | null;
+  onOpenAuth: (mode?: 'login' | 'register') => void;
+  onLogout: () => void;
 }
 
-export function Navbar({ onOpenGetStarted, onOpenWorkspace }: NavbarProps) {
+export function Navbar({
+  onOpenGetStarted,
+  onOpenWorkspace,
+  currentUser,
+  onOpenAuth,
+  onLogout,
+}: NavbarProps) {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   const navLinks = [
@@ -66,25 +76,47 @@ export function Navbar({ onOpenGetStarted, onOpenWorkspace }: NavbarProps) {
               <span>Workspace</span>
             </button>
 
-            {/* Sign In Button (Informative modal, no fake auth) */}
-            <button
-              onClick={onOpenGetStarted}
-              className="text-sm font-semibold text-content-primary hover:text-brand-teal px-3 py-2 transition-colors"
-              id="nav-signin-btn"
-            >
-              Sign In
-            </button>
+            {currentUser ? (
+              <div className="flex items-center space-x-2 border-l border-surface-muted pl-3">
+                <div className="flex items-center space-x-1.5 px-2.5 py-1.5 rounded-lg bg-surface-bg border border-surface-muted text-xs">
+                  <UserCheck className="w-3.5 h-3.5 text-brand-teal" />
+                  <span className="font-semibold text-content-primary max-w-[120px] truncate" title={currentUser.businessName}>
+                    {currentUser.businessName}
+                  </span>
+                </div>
+                <button
+                  onClick={onLogout}
+                  className="inline-flex items-center space-x-1 text-xs font-semibold px-2.5 py-1.5 rounded-lg border border-surface-muted text-content-secondary hover:text-rose-600 hover:bg-rose-50 transition-colors"
+                  id="nav-logout-btn"
+                  title="Sign out of your business account"
+                >
+                  <LogOut className="w-3.5 h-3.5" />
+                  <span>Logout</span>
+                </button>
+              </div>
+            ) : (
+              <>
+                <button
+                  onClick={() => onOpenAuth('login')}
+                  className="text-sm font-semibold text-content-primary hover:text-brand-teal px-3 py-2 transition-colors"
+                  id="nav-signin-btn"
+                >
+                  Sign In
+                </button>
 
-            {/* Primary CTA */}
-            <button
-              onClick={onOpenGetStarted}
-              className="inline-flex items-center space-x-2 text-sm font-semibold px-4 py-2 rounded-xl bg-brand-teal text-white hover:bg-brand-teal-light shadow-soft hover:shadow-card hover:scale-[1.02] active:scale-[0.98] transition-all"
-              id="nav-get-started-btn"
-            >
-              <span>Get Started</span>
-              <ArrowRight className="h-4 w-4" />
-            </button>
+                <button
+                  onClick={onOpenGetStarted}
+                  className="inline-flex items-center space-x-2 text-sm font-semibold px-4 py-2 rounded-xl bg-brand-teal text-white hover:bg-brand-teal-light shadow-soft hover:shadow-card hover:scale-[1.02] active:scale-[0.98] transition-all"
+                  id="nav-get-started-btn"
+                >
+                  <span>Get Started</span>
+                  <ArrowRight className="h-4 w-4" />
+                </button>
+
+              </>
+            )}
           </div>
+
 
           {/* Mobile Menu Toggle Button */}
           <div className="flex md:hidden items-center space-x-2">
@@ -132,25 +164,48 @@ export function Navbar({ onOpenGetStarted, onOpenWorkspace }: NavbarProps) {
               <Inbox className="w-4 h-4" />
               <span>Enquiry Workspace</span>
             </button>
-            <button
-              onClick={() => {
-                setMobileMenuOpen(false);
-                onOpenGetStarted();
-              }}
-              className="w-full text-center py-2.5 text-sm font-semibold text-content-primary hover:bg-surface-bg rounded-lg border border-surface-muted"
-            >
-              Sign In
-            </button>
-            <button
-              onClick={() => {
-                setMobileMenuOpen(false);
-                onOpenGetStarted();
-              }}
-              className="w-full flex items-center justify-center space-x-2 py-3 text-sm font-semibold rounded-xl bg-brand-teal text-white hover:bg-brand-teal-light shadow-soft"
-            >
-              <span>Get Started</span>
-              <ArrowRight className="h-4 w-4" />
-            </button>
+            {currentUser ? (
+              <div className="flex flex-col space-y-2">
+                <div className="flex items-center space-x-2 px-3 py-2 rounded-lg bg-surface-bg border border-surface-muted text-xs">
+                  <UserCheck className="w-4 h-4 text-brand-teal" />
+                  <span className="font-semibold text-content-primary">
+                    {currentUser.businessName} ({currentUser.name})
+                  </span>
+                </div>
+                <button
+                  onClick={() => {
+                    setMobileMenuOpen(false);
+                    onLogout();
+                  }}
+                  className="w-full flex items-center justify-center space-x-2 py-2.5 text-sm font-semibold text-rose-600 bg-rose-50 hover:bg-rose-100 rounded-lg border border-rose-200"
+                >
+                  <LogOut className="w-4 h-4" />
+                  <span>Sign Out</span>
+                </button>
+              </div>
+            ) : (
+              <>
+                <button
+                  onClick={() => {
+                    setMobileMenuOpen(false);
+                    onOpenAuth('login');
+                  }}
+                  className="w-full text-center py-2.5 text-sm font-semibold text-content-primary hover:bg-surface-bg rounded-lg border border-surface-muted"
+                >
+                  Sign In
+                </button>
+                <button
+                  onClick={() => {
+                    setMobileMenuOpen(false);
+                    onOpenAuth('register');
+                  }}
+                  className="w-full flex items-center justify-center space-x-2 py-3 text-sm font-semibold rounded-xl bg-brand-teal text-white hover:bg-brand-teal-light shadow-soft"
+                >
+                  <span>Get Started</span>
+                  <ArrowRight className="h-4 w-4" />
+                </button>
+              </>
+            )}
           </div>
         </div>
       )}

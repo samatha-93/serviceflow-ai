@@ -12,8 +12,19 @@ export interface HealthResponse {
   supportedCategories: string[];
 }
 
+export interface UserProfile {
+  id: string;
+  email: string;
+  name: string;
+  businessName: string;
+  businessId: string;
+  role: 'owner' | 'staff' | 'admin';
+  createdAt?: string;
+}
+
 export interface CustomerEnquiry {
   id: string;
+  businessId?: string;
   customerName: string;
   serviceCategory: string;
   serviceTitle: string;
@@ -24,6 +35,7 @@ export interface CustomerEnquiry {
   message: string;
   suggestedReply: string;
 }
+
 
 export interface UpcomingBooking {
   id: string;

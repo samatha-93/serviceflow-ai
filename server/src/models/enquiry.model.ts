@@ -20,7 +20,13 @@ const enquirySchema = new Schema<EnquiryDocument>(
       index: true,
       trim: true,
     },
+    businessId: {
+      type: String,
+      index: true,
+      trim: true,
+    },
     customerName: {
+
       type: String,
       required: true,
       trim: true,

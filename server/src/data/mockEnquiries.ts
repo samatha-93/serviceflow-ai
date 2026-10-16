@@ -1,4 +1,4 @@
-import { CustomerEnquiry } from '../types/enquiry.types';
+import { CustomerEnquiry, DEMO_TENANT_ID } from '../types/enquiry.types';
 
 /**
  * ServiceFlow AI - Phase 3 Initial Demo Enquiries
@@ -10,6 +10,7 @@ import { CustomerEnquiry } from '../types/enquiry.types';
 export const INITIAL_DEMO_ENQUIRIES: CustomerEnquiry[] = [
   {
     id: 'ENQ-1042',
+    businessId: DEMO_TENANT_ID,
     customerName: 'Sarah Jenkins',
     serviceCategory: 'Outdoor & Property',
     serviceTitle: 'Lawn Mowing & Boundary Hedge Trimming',
@@ -24,6 +25,7 @@ export const INITIAL_DEMO_ENQUIRIES: CustomerEnquiry[] = [
   },
   {
     id: 'ENQ-1041',
+    businessId: DEMO_TENANT_ID,
     customerName: 'Marcus Vance',
     serviceCategory: 'Cleaning Services',
     serviceTitle: 'Commercial Studio Deep Clean (3,200 sq ft)',
@@ -38,6 +40,7 @@ export const INITIAL_DEMO_ENQUIRIES: CustomerEnquiry[] = [
   },
   {
     id: 'ENQ-1040',
+    businessId: DEMO_TENANT_ID,
     customerName: 'Elena Rostova',
     serviceCategory: 'Home Maintenance',
     serviceTitle: 'Water Pressure Loss & Valve Inspection',
@@ -52,6 +55,7 @@ export const INITIAL_DEMO_ENQUIRIES: CustomerEnquiry[] = [
   },
   {
     id: 'ENQ-1039',
+    businessId: DEMO_TENANT_ID,
     customerName: 'David Chen',
     serviceCategory: 'Beauty & Wellness',
     serviceTitle: 'Mobile Hair & Grooming Session',
@@ -66,6 +70,7 @@ export const INITIAL_DEMO_ENQUIRIES: CustomerEnquiry[] = [
   },
   {
     id: 'ENQ-1038',
+    businessId: DEMO_TENANT_ID,
     customerName: 'Rachel Adams',
     serviceCategory: 'Independent Professionals',
     serviceTitle: 'Commercial Acoustic Assessment',
@@ -80,6 +85,7 @@ export const INITIAL_DEMO_ENQUIRIES: CustomerEnquiry[] = [
   },
   {
     id: 'ENQ-1037',
+    businessId: DEMO_TENANT_ID,
     customerName: 'Liam Fitzpatrick',
     serviceCategory: 'Home Maintenance',
     serviceTitle: 'Emergency Main Pipe Leak Repair',
@@ -94,6 +100,7 @@ export const INITIAL_DEMO_ENQUIRIES: CustomerEnquiry[] = [
   },
   {
     id: 'ENQ-1036',
+    businessId: DEMO_TENANT_ID,
     customerName: 'Amina Patel',
     serviceCategory: 'Cleaning Services',
     serviceTitle: 'Bi-Weekly Residential Cleaning',
@@ -106,4 +113,5 @@ export const INITIAL_DEMO_ENQUIRIES: CustomerEnquiry[] = [
     suggestedReply:
       'Hi Amina, your bi-weekly slot has been confirmed starting next Wednesday at 10:00 AM with our certified team (Claire & Tom).',
   },
+
 ];

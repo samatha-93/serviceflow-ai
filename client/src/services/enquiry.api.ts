@@ -80,16 +80,28 @@ export interface CreateEnquiryPayload {
   receivedTime?: string;
 }
 
+function getAuthHeaders(): Record<string, string> {
+  const headers: Record<string, string> = { 'Content-Type': 'application/json' };
+  const token = localStorage.getItem('serviceflow_token');
+  if (token) {
+    headers['Authorization'] = `Bearer ${token}`;
+  }
+  return headers;
+}
+
 // -------------------------------------------------------------------
 // Public API functions
 // -------------------------------------------------------------------
 
 /**
  * GET /api/enquiries
- * Fetches all enquiries from the backend.
+ * Fetches enquiries from the backend (scoped to authenticated business or demo).
  */
 export async function fetchEnquiries(): Promise<CustomerEnquiry[]> {
-  const res = await fetch(`${API_BASE}/enquiries`);
+  const res = await fetch(`${API_BASE}/enquiries`, {
+    credentials: 'include',
+    headers: getAuthHeaders(),
+  });
   const body = await parseResponse<EnquiryListResponse>(res);
   return body.data;
 }
@@ -99,21 +111,25 @@ export async function fetchEnquiries(): Promise<CustomerEnquiry[]> {
  * Fetches a single enquiry by ID.
  */
 export async function fetchEnquiryById(id: string): Promise<CustomerEnquiry> {
-  const res = await fetch(`${API_BASE}/enquiries/${encodeURIComponent(id)}`);
+  const res = await fetch(`${API_BASE}/enquiries/${encodeURIComponent(id)}`, {
+    credentials: 'include',
+    headers: getAuthHeaders(),
+  });
   const body = await parseResponse<EnquirySingleResponse>(res);
   return body.data;
 }
 
 /**
  * POST /api/enquiries
- * Creates a new customer enquiry on the backend.
+ * Creates a new customer enquiry on the backend for the authenticated business.
  */
 export async function createEnquiry(
   payload: CreateEnquiryPayload,
 ): Promise<CustomerEnquiry> {
   const res = await fetch(`${API_BASE}/enquiries`, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers: getAuthHeaders(),
+    credentials: 'include',
     body: JSON.stringify(payload),
   });
   const body = await parseResponse<EnquirySingleResponse>(res);
@@ -122,7 +138,7 @@ export async function createEnquiry(
 
 /**
  * PATCH /api/enquiries/:id/status
- * Updates the status of an enquiry and returns the updated record from the server.
+ * Updates the status of an enquiry with tenant ownership verification.
  */
 export async function patchEnquiryStatus(
   id: string,
@@ -130,7 +146,8 @@ export async function patchEnquiryStatus(
 ): Promise<CustomerEnquiry> {
   const res = await fetch(`${API_BASE}/enquiries/${encodeURIComponent(id)}/status`, {
     method: 'PATCH',
-    headers: { 'Content-Type': 'application/json' },
+    headers: getAuthHeaders(),
+    credentials: 'include',
     body: JSON.stringify({ status }),
   });
   const body = await parseResponse<EnquirySingleResponse>(res);

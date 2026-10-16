@@ -9,8 +9,10 @@ import { FinalCta } from './components/FinalCta';
 import { Footer } from './components/Footer';
 import { SystemDiagnosticsModal } from './components/SystemDiagnosticsModal';
 import { GetStartedModal } from './components/GetStartedModal';
+import { AuthModal } from './components/auth/AuthModal';
 import { EnquiryWorkspace } from './components/enquiries/EnquiryWorkspace';
-import { HealthResponse } from './types';
+import { HealthResponse, UserProfile } from './types';
+import { fetchCurrentUser, logoutUser } from './services/auth.api';
 
 export default function App() {
   const [currentView, setCurrentView] = useState<'landing' | 'workspace'>('landing');
@@ -21,6 +23,9 @@ export default function App() {
   const [showRaw, setShowRaw] = useState<boolean>(false);
   const [diagnosticsOpen, setDiagnosticsOpen] = useState<boolean>(false);
   const [getStartedOpen, setGetStartedOpen] = useState<boolean>(false);
+  const [authModalOpen, setAuthModalOpen] = useState<boolean>(false);
+  const [authModalMode, setAuthModalMode] = useState<'login' | 'register'>('login');
+  const [currentUser, setCurrentUser] = useState<UserProfile | null>(null);
 
   const checkHealth = async () => {
     setLoading(true);
@@ -44,9 +49,28 @@ export default function App() {
     }
   };
 
+  // Restore active user session on app load
   useEffect(() => {
     checkHealth();
+    fetchCurrentUser()
+      .then((user) => {
+        if (user) setCurrentUser(user);
+      })
+      .catch((_err) => {
+        // Session not present or expired
+      });
   }, []);
+
+  const openAuth = (mode: 'login' | 'register' = 'login') => {
+    setAuthModalMode(mode);
+    setAuthModalOpen(true);
+  };
+
+  const handleLogout = async () => {
+    await logoutUser();
+    setCurrentUser(null);
+  };
+
 
   // Listen to hash changes for direct workspace access (e.g. #workspace or #enquiries)
   useEffect(() => {
@@ -98,6 +122,9 @@ export default function App() {
           onOpenDiagnostics={() => setDiagnosticsOpen(true)}
           backendStatus={backendStatus}
           databaseStatus={healthData?.database.status}
+          currentUser={currentUser}
+          onOpenAuth={openAuth}
+          onLogout={handleLogout}
         />
 
         {/* Developer Diagnostics Modal preserved in workspace */}
@@ -112,6 +139,16 @@ export default function App() {
           setShowRaw={setShowRaw}
           onRetest={checkHealth}
         />
+
+        {/* Auth Modal (Sign In / Register) */}
+        <AuthModal
+          isOpen={authModalOpen}
+          initialMode={authModalMode}
+          onClose={() => setAuthModalOpen(false)}
+          onSuccess={(user) => {
+            setCurrentUser(user);
+          }}
+        />
       </>
     );
   }
@@ -123,6 +160,9 @@ export default function App() {
       <Navbar
         onOpenGetStarted={() => setGetStartedOpen(true)}
         onOpenWorkspace={openWorkspace}
+        currentUser={currentUser}
+        onOpenAuth={openAuth}
+        onLogout={handleLogout}
       />
 
       {/* Main Content */}
@@ -146,7 +186,7 @@ export default function App() {
         <Features />
 
         {/* 7. Final CTA */}
-        <FinalCta onCtaClick={() => setGetStartedOpen(true)} />
+        <FinalCta onCtaClick={() => openAuth('register')} />
       </main>
 
       {/* 8. Footer */}
@@ -174,6 +214,16 @@ export default function App() {
         isOpen={getStartedOpen}
         onClose={() => setGetStartedOpen(false)}
         onExploreDemo={() => scrollToSection('hero-section')}
+      />
+
+      {/* Auth Modal (Sign In / Register) */}
+      <AuthModal
+        isOpen={authModalOpen}
+        initialMode={authModalMode}
+        onClose={() => setAuthModalOpen(false)}
+        onSuccess={(user) => {
+          setCurrentUser(user);
+        }}
       />
     </div>
   );

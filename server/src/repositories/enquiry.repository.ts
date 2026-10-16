@@ -1,5 +1,5 @@
 import mongoose from 'mongoose';
-import { CustomerEnquiry, CreateEnquiryDTO, EnquiryStatus } from '../types/enquiry.types';
+import { CustomerEnquiry, CreateEnquiryDTO, EnquiryStatus, DEMO_TENANT_ID } from '../types/enquiry.types';
 import { INITIAL_DEMO_ENQUIRIES } from '../data/mockEnquiries';
 import { EnquiryModel } from '../models/enquiry.model';
 
@@ -14,17 +14,17 @@ export class DatabaseUnavailableError extends Error {
  * Customer Enquiry Repository
  *
  * Provides persistent data access backed by MongoDB via Mongoose,
- * with controlled standby fallback when MongoDB is unavailable.
+ * with strict multi-tenant business-level data isolation.
  *
- * Lifecycle & Persistence behavior:
+ * Tenant Isolation & Persistence behavior:
  * - When MongoDB is connected (readyState === 1):
- *   - Reads (findAll, findById) query MongoDB.
- *   - Writes (create, updateStatus) persist directly to MongoDB.
- *   - Records survive server restarts.
+ *   - Reads (findAll, findById) are strictly scoped to the requesting businessId
+ *     (or DEMO_TENANT_ID for unauthenticated public demo visits).
+ *   - Writes (create, updateStatus) enforce business ownership in every query.
+ *   - Cross-tenant queries return 404 / undefined.
  * - When MongoDB is unavailable:
- *   - Reads return a standalone read-only copy of demo enquiries.
- *   - Writes throw DatabaseUnavailableError so controllers return HTTP 503
- *     rather than silently pretending ephemeral in-memory state was saved.
+ *   - Reads return standalone demo enquiries for public demo view, or empty array for tenant views.
+ *   - Writes throw DatabaseUnavailableError so controllers return HTTP 503.
  */
 class EnquiryRepository {
   private fallbackEnquiries: CustomerEnquiry[];
@@ -48,6 +48,7 @@ class EnquiryRepository {
   private toCustomerEnquiry(doc: any): CustomerEnquiry {
     return {
       id: doc.id,
+      businessId: doc.businessId,
       customerName: doc.customerName,
       serviceCategory: doc.serviceCategory,
       serviceTitle: doc.serviceTitle,
@@ -61,37 +62,67 @@ class EnquiryRepository {
   }
 
   /**
-   * Retrieve all enquiries.
-   * Reads from MongoDB when connected (sorted newest first), or fallback demo records.
+   * Retrieve enquiries scoped to the given businessId.
+   * If businessId is not specified or is DEMO_TENANT_ID, returns public demo records.
    */
-  public async findAll(): Promise<CustomerEnquiry[]> {
+  public async findAll(businessId?: string): Promise<CustomerEnquiry[]> {
     if (this.isConnected()) {
-      const docs = await EnquiryModel.find().sort({ createdAt: -1, id: -1 }).lean();
+      const filter = businessId && businessId !== DEMO_TENANT_ID
+        ? { businessId }
+        : {
+            $or: [
+              { businessId: DEMO_TENANT_ID },
+              { businessId: { $exists: false } },
+              { businessId: null },
+            ],
+          };
+
+      const docs = await EnquiryModel.find(filter).sort({ createdAt: -1, id: -1 }).lean();
       return docs.map((doc) => this.toCustomerEnquiry(doc));
     }
 
-    return this.fallbackEnquiries.map((item) => ({ ...item }));
+    if (!businessId || businessId === DEMO_TENANT_ID) {
+      return this.fallbackEnquiries.map((item) => ({ ...item }));
+    }
+
+    return [];
   }
 
   /**
-   * Retrieve a single enquiry by ID (case-insensitive lookup)
+   * Retrieve a single enquiry by ID and businessId (case-insensitive ID lookup).
+   * Ensures a tenant cannot read an enquiry belonging to another business.
    */
-  public async findById(id: string): Promise<CustomerEnquiry | undefined> {
+  public async findById(id: string, businessId?: string): Promise<CustomerEnquiry | undefined> {
     const trimmedId = id.trim();
     const escaped = trimmedId.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 
     if (this.isConnected()) {
-      const doc = await EnquiryModel.findOne({
+      const filter: any = {
         id: { $regex: new RegExp(`^${escaped}$`, 'i') },
-      }).lean();
+      };
 
+      if (businessId && businessId !== DEMO_TENANT_ID) {
+        filter.businessId = businessId;
+      } else {
+        filter.$or = [
+          { businessId: DEMO_TENANT_ID },
+          { businessId: { $exists: false } },
+          { businessId: null },
+        ];
+      }
+
+      const doc = await EnquiryModel.findOne(filter).lean();
       return doc ? this.toCustomerEnquiry(doc) : undefined;
     }
 
-    const found = this.fallbackEnquiries.find(
-      (item) => item.id.toLowerCase() === trimmedId.toLowerCase()
-    );
-    return found ? { ...found } : undefined;
+    if (!businessId || businessId === DEMO_TENANT_ID) {
+      const found = this.fallbackEnquiries.find(
+        (item) => item.id.toLowerCase() === trimmedId.toLowerCase()
+      );
+      return found ? { ...found } : undefined;
+    }
+
+    return undefined;
   }
 
   /**
@@ -140,12 +171,12 @@ class EnquiryRepository {
   }
 
   /**
-   * Create a new customer enquiry.
+   * Create a new customer enquiry for a specific business.
    *
-   * - Persists record in MongoDB when database is connected.
-   * - If database is offline, throws DatabaseUnavailableError to avoid false claims of persistence.
+   * - Persists record in MongoDB stamped with businessId.
+   * - If database is offline, throws DatabaseUnavailableError.
    */
-  public async create(dto: CreateEnquiryDTO): Promise<CustomerEnquiry> {
+  public async create(dto: CreateEnquiryDTO, businessId: string): Promise<CustomerEnquiry> {
     if (!this.isConnected()) {
       throw new DatabaseUnavailableError(
         'Database is unavailable. Cannot persist new enquiry while database is disconnected.'
@@ -160,6 +191,7 @@ class EnquiryRepository {
 
     const createdDoc = await EnquiryModel.create({
       id,
+      businessId,
       customerName: dto.customerName.trim(),
       serviceCategory: dto.serviceCategory.trim(),
       serviceTitle: dto.serviceTitle.trim(),
@@ -175,13 +207,17 @@ class EnquiryRepository {
   }
 
   /**
-   * Update the status of an existing enquiry by ID.
+   * Update the status of an existing enquiry by ID with business ownership enforcement.
    *
-   * - Persists status in MongoDB when database is connected.
-   * - If database is offline, throws DatabaseUnavailableError.
-   * - Returns undefined if the record does not exist.
+   * - Finds and updates ONLY if id AND businessId match.
+   * - Prevents cross-tenant status modifications.
+   * - Returns undefined if the record does not exist or belongs to another business.
    */
-  public async updateStatus(id: string, status: EnquiryStatus): Promise<CustomerEnquiry | undefined> {
+  public async updateStatus(
+    id: string,
+    status: EnquiryStatus,
+    businessId: string
+  ): Promise<CustomerEnquiry | undefined> {
     if (!this.isConnected()) {
       throw new DatabaseUnavailableError(
         'Database is unavailable. Cannot update enquiry status while database is disconnected.'
@@ -192,7 +228,10 @@ class EnquiryRepository {
     const escaped = trimmedId.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 
     const updatedDoc = await EnquiryModel.findOneAndUpdate(
-      { id: { $regex: new RegExp(`^${escaped}$`, 'i') } },
+      {
+        id: { $regex: new RegExp(`^${escaped}$`, 'i') },
+        businessId,
+      },
       { $set: { status } },
       { new: true }
     ).lean();

@@ -8,7 +8,10 @@ import {
   RefreshCw,
   AlertTriangle,
   Loader2,
+  UserCheck,
+  LogOut,
 } from 'lucide-react';
+
 import { CustomerEnquiry } from '../../types';
 import { DEMO_ENQUIRIES } from '../../data/mockEnquiries';
 import { fetchEnquiries, patchEnquiryStatus, ApiError } from '../../services/enquiry.api';
@@ -16,12 +19,16 @@ import { EnquiryMetrics } from './EnquiryMetrics';
 import { EnquiryFilters } from './EnquiryFilters';
 import { EnquiryTable } from './EnquiryTable';
 import { EnquiryDetailModal } from './EnquiryDetailModal';
+import { UserProfile } from '../../types';
 
 interface EnquiryWorkspaceProps {
   onBackToLanding: () => void;
   onOpenDiagnostics: () => void;
   backendStatus: 'healthy' | 'offline' | 'checking';
   databaseStatus?: string;
+  currentUser?: UserProfile | null;
+  onOpenAuth?: (mode?: 'login' | 'register') => void;
+  onLogout?: () => void;
 }
 
 type DataSource = 'api' | 'demo';
@@ -31,7 +38,11 @@ export function EnquiryWorkspace({
   onOpenDiagnostics,
   backendStatus,
   databaseStatus,
+  currentUser,
+  onOpenAuth,
+  onLogout,
 }: EnquiryWorkspaceProps) {
+
   // ----------------------------------------------------------------
   // Data state
   // ----------------------------------------------------------------
@@ -93,11 +104,12 @@ export function EnquiryWorkspace({
         setLoadError(message);
       }
     }
-  }, [backendStatus]);
+  }, [backendStatus, currentUser]);
 
   useEffect(() => {
     loadEnquiries();
   }, [loadEnquiries]);
+
 
   // When backend becomes healthy after having been offline, automatically upgrade to live data
   useEffect(() => {
@@ -257,6 +269,37 @@ export function EnquiryWorkspace({
                 <ArrowLeft className="w-4 h-4 text-brand-teal" />
                 <span>Back to Website</span>
               </button>
+
+              {/* User Account Controls */}
+              {currentUser ? (
+                <div className="flex items-center space-x-2 border-l border-surface-muted pl-3">
+                  <div className="hidden lg:flex items-center space-x-1.5 px-2.5 py-1.5 rounded-lg bg-surface-bg border border-surface-muted text-xs">
+                    <UserCheck className="w-3.5 h-3.5 text-brand-teal" />
+                    <span className="font-semibold text-content-primary max-w-[140px] truncate" title={currentUser.businessName}>
+                      {currentUser.businessName}
+                    </span>
+                  </div>
+                  <button
+                    onClick={onLogout}
+                    className="inline-flex items-center space-x-1 text-xs font-semibold px-2.5 py-1.5 rounded-lg border border-surface-muted text-content-secondary hover:text-rose-600 hover:bg-rose-50 transition-colors"
+                    id="workspace-logout-btn"
+                    title="Sign out of your business account"
+                  >
+                    <LogOut className="w-3.5 h-3.5" />
+                    <span className="hidden sm:inline">Logout</span>
+                  </button>
+                </div>
+              ) : (
+                <div className="flex items-center space-x-2 border-l border-surface-muted pl-3">
+                  <button
+                    onClick={() => onOpenAuth?.('login')}
+                    className="text-xs font-semibold px-3 py-1.5 rounded-lg bg-brand-teal text-white hover:bg-brand-teal-light shadow-soft transition-colors"
+                    id="workspace-signin-btn"
+                  >
+                    Sign In
+                  </button>
+                </div>
+              )}
             </div>
           </div>
         </div>
@@ -269,21 +312,65 @@ export function EnquiryWorkspace({
           <div className="space-y-1">
             <div className="flex items-center space-x-2">
               <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-content-primary">
-                Enquiry Management
+                {currentUser ? `${currentUser.businessName} Inbox` : 'Enquiry Management'}
               </h1>
               <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-bold bg-brand-teal-50 text-brand-teal border border-brand-teal-100">
-                Phase 3
+                {currentUser ? 'Private Tenant' : 'Public Demo'}
               </span>
             </div>
             <p className="text-sm text-content-secondary max-w-2xl leading-relaxed">
-              Triage customer enquiries, inspect job requests, and preview AI-assisted proposals across your service verticals.
+              {currentUser
+                ? `Managing enquiries exclusively for ${currentUser.businessName}. Data isolation enforced by business ownership.`
+                : 'Triage customer enquiries, inspect job requests, and preview AI-assisted proposals across your service verticals.'}
             </p>
           </div>
 
           <div className="text-xs text-content-muted">
-            ServiceFlow AI • Standalone Workspace View
+            {currentUser ? (
+              <span className="font-mono text-[11px] bg-surface-muted px-2 py-1 rounded">
+                Tenant: {currentUser.businessId}
+              </span>
+            ) : (
+              <span>ServiceFlow AI • Standalone Workspace View</span>
+            )}
           </div>
         </div>
+
+        {/* Tenant Isolation / Public Demo Notification Banner */}
+        {currentUser ? (
+          <div className="p-3.5 rounded-xl bg-emerald-50/80 border border-emerald-200 flex items-center justify-between text-xs text-emerald-800">
+            <div className="flex items-center space-x-2">
+              <UserCheck className="w-4 h-4 text-emerald-600 flex-shrink-0" />
+              <span>
+                <strong>Authenticated Business Account:</strong> Logged in as <span className="font-semibold">{currentUser.name}</span> ({currentUser.email}). Enquiries created or updated here are strictly isolated to your business.
+              </span>
+            </div>
+          </div>
+        ) : (
+          <div className="p-4 rounded-xl bg-brand-teal-50/70 border border-brand-teal-100 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs text-brand-teal-900">
+            <div className="flex items-center space-x-2.5">
+              <Sparkles className="w-5 h-5 text-brand-teal flex-shrink-0" />
+              <span>
+                <strong>Public Demo Mode:</strong> Viewing shared demo enquiries. Sign in or create an account to get a private, isolated business workspace.
+              </span>
+            </div>
+            <div className="flex items-center space-x-2 flex-shrink-0">
+              <button
+                onClick={() => onOpenAuth?.('login')}
+                className="px-3 py-1.5 rounded-lg bg-surface-card border border-brand-teal-200 text-brand-teal font-semibold hover:bg-brand-teal-50 transition-colors"
+              >
+                Sign In
+              </button>
+              <button
+                onClick={() => onOpenAuth?.('register')}
+                className="px-3 py-1.5 rounded-lg bg-brand-teal text-white font-semibold hover:bg-brand-teal-light shadow-xs transition-colors"
+              >
+                Register Business
+              </button>
+            </div>
+          </div>
+        )}
+
 
         {/* ── Loading state ── */}
         {loadState === 'loading' && (

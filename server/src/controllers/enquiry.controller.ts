@@ -1,4 +1,5 @@
-import { Request, Response, NextFunction } from 'express';
+import { Response, NextFunction } from 'express';
+import { AuthenticatedRequest } from '../types/auth.types';
 import {
   enquiryRepository,
   DatabaseUnavailableError,
@@ -12,10 +13,11 @@ import {
 
 /**
  * GET /api/enquiries
- * Retrieve all customer enquiries (from MongoDB when connected, or fallback demo data)
+ * Retrieve customer enquiries scoped to the authenticated business,
+ * or the public demo enquiries if unauthenticated.
  */
 export const getEnquiries = async (
-  _req: Request,
+  req: AuthenticatedRequest,
   res: Response,
   next: NextFunction
 ): Promise<void> => {
@@ -23,7 +25,8 @@ export const getEnquiries = async (
     const isConnected = enquiryRepository.isConnected();
     res.setHeader('X-Database-Status', isConnected ? 'connected' : 'disconnected');
 
-    const enquiries = await enquiryRepository.findAll();
+    const businessId = req.user?.businessId;
+    const enquiries = await enquiryRepository.findAll(businessId);
     res.status(200).json({
       status: 'success',
       data: enquiries,
@@ -36,10 +39,10 @@ export const getEnquiries = async (
 
 /**
  * GET /api/enquiries/:id
- * Retrieve a single customer enquiry by ID
+ * Retrieve a single customer enquiry by ID, verifying tenant ownership.
  */
 export const getEnquiryById = async (
-  req: Request,
+  req: AuthenticatedRequest,
   res: Response,
   next: NextFunction
 ): Promise<void> => {
@@ -54,7 +57,9 @@ export const getEnquiryById = async (
       return;
     }
 
-    const enquiry = await enquiryRepository.findById(id);
+    const businessId = req.user?.businessId;
+    const enquiry = await enquiryRepository.findById(id, businessId);
+
 
     if (!enquiry) {
       res.status(404).json({
@@ -92,11 +97,19 @@ export const getEnquiryById = async (
  * - HTTP 503: Database unavailable for persistent storage.
  */
 export const createEnquiry = async (
-  req: Request,
+  req: AuthenticatedRequest,
   res: Response,
   next: NextFunction
 ): Promise<void> => {
   try {
+    if (!req.user || !req.user.businessId) {
+      res.status(401).json({
+        status: 'error',
+        message: 'Authentication required to create enquiries.',
+      });
+      return;
+    }
+
     if (!req.body || typeof req.body !== 'object' || Array.isArray(req.body)) {
       res.status(400).json({
         status: 'error',
@@ -185,17 +198,20 @@ export const createEnquiry = async (
       return;
     }
 
-    const newEnquiry = await enquiryRepository.create({
-      customerName,
-      serviceCategory,
-      serviceTitle,
-      location,
-      message,
-      status,
-      urgency,
-      suggestedReply,
-      receivedTime,
-    });
+    const newEnquiry = await enquiryRepository.create(
+      {
+        customerName,
+        serviceCategory,
+        serviceTitle,
+        location,
+        message,
+        status,
+        urgency,
+        suggestedReply,
+        receivedTime,
+      },
+      req.user.businessId
+    );
 
     res.status(201).json({
       status: 'success',
@@ -215,26 +231,22 @@ export const createEnquiry = async (
 
 /**
  * PATCH /api/enquiries/:id/status
- * Update the status of an existing customer enquiry in MongoDB
- *
- * Validations:
- * - Enquiry ID must be provided.
- * - Request body must include a valid status matching allowed EnquiryStatus values.
- * - Target enquiry must exist in MongoDB.
- * - Persistent database must be connected; returns HTTP 503 if unavailable.
- *
- * Responses:
- * - HTTP 200: Successfully updated enquiry record.
- * - HTTP 400: Missing/invalid status or malformed input.
- * - HTTP 404: Enquiry not found.
- * - HTTP 503: Database unavailable for updates.
+ * Update the status of an existing customer enquiry in MongoDB with business ownership check
  */
 export const updateEnquiryStatus = async (
-  req: Request,
+  req: AuthenticatedRequest,
   res: Response,
   next: NextFunction
 ): Promise<void> => {
   try {
+    if (!req.user || !req.user.businessId) {
+      res.status(401).json({
+        status: 'error',
+        message: 'Authentication required to update enquiries.',
+      });
+      return;
+    }
+
     const id = Array.isArray(req.params.id) ? req.params.id[0] : req.params.id;
 
     if (!id || id.trim().length === 0) {
@@ -273,7 +285,7 @@ export const updateEnquiryStatus = async (
       return;
     }
 
-    const updated = await enquiryRepository.updateStatus(id, status);
+    const updated = await enquiryRepository.updateStatus(id, status, req.user.businessId);
 
     if (!updated) {
       res.status(404).json({
