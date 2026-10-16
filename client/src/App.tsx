@@ -9,9 +9,11 @@ import { FinalCta } from './components/FinalCta';
 import { Footer } from './components/Footer';
 import { SystemDiagnosticsModal } from './components/SystemDiagnosticsModal';
 import { GetStartedModal } from './components/GetStartedModal';
+import { EnquiryWorkspace } from './components/enquiries/EnquiryWorkspace';
 import { HealthResponse } from './types';
 
 export default function App() {
+  const [currentView, setCurrentView] = useState<'landing' | 'workspace'>('landing');
   const [healthData, setHealthData] = useState<HealthResponse | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
@@ -46,6 +48,34 @@ export default function App() {
     checkHealth();
   }, []);
 
+  // Listen to hash changes for direct workspace access (e.g. #workspace or #enquiries)
+  useEffect(() => {
+    const syncViewWithHash = () => {
+      const hash = window.location.hash.toLowerCase();
+      if (hash === '#workspace' || hash === '#enquiries') {
+        setCurrentView('workspace');
+      } else if (hash === '' || hash === '#home') {
+        setCurrentView('landing');
+      }
+    };
+
+    syncViewWithHash();
+    window.addEventListener('hashchange', syncViewWithHash);
+    return () => window.removeEventListener('hashchange', syncViewWithHash);
+  }, []);
+
+  const openWorkspace = () => {
+    window.location.hash = '#workspace';
+    setCurrentView('workspace');
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  const closeWorkspace = () => {
+    window.location.hash = '';
+    setCurrentView('landing');
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
   const backendStatus: 'healthy' | 'offline' | 'checking' = loading
     ? 'checking'
     : healthData
@@ -59,10 +89,40 @@ export default function App() {
     }
   };
 
+  // If viewing the Enquiry Management Workspace
+  if (currentView === 'workspace') {
+    return (
+      <>
+        <EnquiryWorkspace
+          onBackToLanding={closeWorkspace}
+          onOpenDiagnostics={() => setDiagnosticsOpen(true)}
+          backendStatus={backendStatus}
+        />
+
+        {/* Developer Diagnostics Modal preserved in workspace */}
+        <SystemDiagnosticsModal
+          isOpen={diagnosticsOpen}
+          onClose={() => setDiagnosticsOpen(false)}
+          healthData={healthData}
+          loading={loading}
+          error={error}
+          latency={latency}
+          showRaw={showRaw}
+          setShowRaw={setShowRaw}
+          onRetest={checkHealth}
+        />
+      </>
+    );
+  }
+
+  // Public Landing Page (Preserved completely intact)
   return (
     <div className="min-h-screen bg-surface-bg text-content-primary flex flex-col font-sans selection:bg-brand-teal selection:text-white">
       {/* 1. Navigation */}
-      <Navbar onOpenGetStarted={() => setGetStartedOpen(true)} />
+      <Navbar
+        onOpenGetStarted={() => setGetStartedOpen(true)}
+        onOpenWorkspace={openWorkspace}
+      />
 
       {/* Main Content */}
       <main className="flex-1 w-full" id="main-content">
@@ -92,9 +152,10 @@ export default function App() {
       <Footer
         onOpenDiagnostics={() => setDiagnosticsOpen(true)}
         backendStatus={backendStatus}
+        onOpenWorkspace={openWorkspace}
       />
 
-      {/* Developer Diagnostics Modal (Preserves full backend health verification) */}
+      {/* Developer Diagnostics Modal */}
       <SystemDiagnosticsModal
         isOpen={diagnosticsOpen}
         onClose={() => setDiagnosticsOpen(false)}

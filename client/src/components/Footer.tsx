@@ -3,9 +3,10 @@ import { Sparkles, ArrowUp } from 'lucide-react';
 interface FooterProps {
   onOpenDiagnostics: () => void;
   backendStatus: 'healthy' | 'offline' | 'checking';
+  onOpenWorkspace?: () => void;
 }
 
-export function Footer({ onOpenDiagnostics, backendStatus }: FooterProps) {
+export function Footer({ onOpenDiagnostics, backendStatus, onOpenWorkspace }: FooterProps) {
   const scrollToTop = () => {
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
@@ -57,6 +58,16 @@ export function Footer({ onOpenDiagnostics, backendStatus }: FooterProps) {
                   Services
                 </a>
               </li>
+              {onOpenWorkspace && (
+                <li>
+                  <button
+                    onClick={onOpenWorkspace}
+                    className="hover:text-brand-teal transition-colors text-left font-medium text-brand-teal"
+                  >
+                    Enquiry Workspace
+                  </button>
+                </li>
+              )}
             </ul>
           </div>
         </div>

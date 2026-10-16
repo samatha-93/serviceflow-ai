@@ -1,11 +1,12 @@
 import { useState } from 'react';
-import { Sparkles, Menu, X, ArrowRight } from 'lucide-react';
+import { Sparkles, Menu, X, ArrowRight, Inbox } from 'lucide-react';
 
 interface NavbarProps {
   onOpenGetStarted: () => void;
+  onOpenWorkspace: () => void;
 }
 
-export function Navbar({ onOpenGetStarted }: NavbarProps) {
+export function Navbar({ onOpenGetStarted, onOpenWorkspace }: NavbarProps) {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   const navLinks = [
@@ -54,6 +55,17 @@ export function Navbar({ onOpenGetStarted }: NavbarProps) {
 
           {/* Desktop Actions */}
           <div className="hidden md:flex items-center space-x-3">
+            {/* Workspace Button */}
+            <button
+              onClick={onOpenWorkspace}
+              className="inline-flex items-center space-x-1.5 text-xs font-semibold px-3 py-2 rounded-xl bg-brand-teal-50 text-brand-teal hover:bg-brand-teal-100 border border-brand-teal-100 transition-colors shadow-xs focus-visible:outline-brand-teal"
+              id="nav-workspace-btn"
+              title="Open Enquiry Management Workspace"
+            >
+              <Inbox className="w-3.5 h-3.5" />
+              <span>Workspace</span>
+            </button>
+
             {/* Sign In Button (Informative modal, no fake auth) */}
             <button
               onClick={onOpenGetStarted}
@@ -109,6 +121,17 @@ export function Navbar({ onOpenGetStarted }: NavbarProps) {
           </div>
 
           <div className="pt-3 border-t border-surface-muted flex flex-col space-y-2.5">
+            <button
+              onClick={() => {
+                setMobileMenuOpen(false);
+                onOpenWorkspace();
+              }}
+              className="w-full flex items-center justify-center space-x-2 py-2.5 text-sm font-semibold text-brand-teal bg-brand-teal-50 hover:bg-brand-teal-100 rounded-lg border border-brand-teal-100"
+              id="mobile-nav-workspace-btn"
+            >
+              <Inbox className="w-4 h-4" />
+              <span>Enquiry Workspace</span>
+            </button>
             <button
               onClick={() => {
                 setMobileMenuOpen(false);
