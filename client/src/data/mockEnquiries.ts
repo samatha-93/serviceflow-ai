@@ -1,8 +1,8 @@
 import { CustomerEnquiry } from '../types';
 
 /**
- * ServiceFlow AI - Phase 3 Step 1 Demo Enquiries
- * 
+ * ServiceFlow AI - Phase 3 Demo Enquiries
+ *
  * Note: These are simulated customer enquiries designed for UI testing,
  * filtering, and triage inspection. No backend connection or database
  * persistence is configured in this step.

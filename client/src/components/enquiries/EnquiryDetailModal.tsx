@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import {
   X,
   MapPin,
@@ -8,15 +8,25 @@ import {
   FileText,
   User,
   ShieldCheck,
+  CheckCircle2,
 } from 'lucide-react';
 import { CustomerEnquiry } from '../../types';
+import { ENQUIRY_STATUSES } from '../../data/mockEnquiries';
 
 interface EnquiryDetailModalProps {
   enquiry: CustomerEnquiry | null;
   onClose: () => void;
+  onUpdateStatus: (newStatus: CustomerEnquiry['status']) => void;
 }
 
-export function EnquiryDetailModal({ enquiry, onClose }: EnquiryDetailModalProps) {
+export function EnquiryDetailModal({ enquiry, onClose, onUpdateStatus }: EnquiryDetailModalProps) {
+  const [feedback, setFeedback] = useState<string | null>(null);
+
+  // Clear feedback when selected enquiry changes or modal closes
+  useEffect(() => {
+    setFeedback(null);
+  }, [enquiry?.id]);
+
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === 'Escape') onClose();
@@ -28,6 +38,12 @@ export function EnquiryDetailModal({ enquiry, onClose }: EnquiryDetailModalProps
   }, [enquiry, onClose]);
 
   if (!enquiry) return null;
+
+  const handleStatusSelect = (newStatus: CustomerEnquiry['status']) => {
+    if (newStatus === enquiry.status) return;
+    onUpdateStatus(newStatus);
+    setFeedback(`Status updated to "${newStatus}". Stored in session memory.`);
+  };
 
   const getStatusBadge = (status: CustomerEnquiry['status']) => {
     switch (status) {
@@ -41,6 +57,21 @@ export function EnquiryDetailModal({ enquiry, onClose }: EnquiryDetailModalProps
         return 'bg-emerald-50 text-emerald-700 border-emerald-200';
       default:
         return 'bg-surface-bg text-content-secondary border-surface-muted';
+    }
+  };
+
+  const getStatusActiveStyle = (status: CustomerEnquiry['status']) => {
+    switch (status) {
+      case 'High Priority':
+        return 'bg-rose-100 text-rose-800 border-rose-300 ring-2 ring-rose-400/30';
+      case 'Awaiting Review':
+        return 'bg-amber-100 text-amber-800 border-amber-300 ring-2 ring-amber-400/30';
+      case 'Quoted':
+        return 'bg-blue-100 text-blue-800 border-blue-300 ring-2 ring-blue-400/30';
+      case 'Booked':
+        return 'bg-emerald-100 text-emerald-800 border-emerald-300 ring-2 ring-emerald-400/30';
+      default:
+        return 'bg-brand-teal-50 text-brand-teal border-brand-teal-200 ring-2 ring-brand-teal/30';
     }
   };
 
@@ -90,6 +121,27 @@ export function EnquiryDetailModal({ enquiry, onClose }: EnquiryDetailModalProps
 
         {/* Modal Scrollable Content */}
         <div className="p-6 overflow-y-auto space-y-6">
+          {/* Status Feedback Confirmation Banner */}
+          {feedback && (
+            <div
+              role="status"
+              aria-live="polite"
+              className="p-3.5 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs flex items-center justify-between shadow-xs animate-fadeIn"
+            >
+              <div className="flex items-center space-x-2">
+                <CheckCircle2 className="w-4 h-4 text-emerald-600 flex-shrink-0" />
+                <span className="font-semibold">{feedback}</span>
+              </div>
+              <button
+                onClick={() => setFeedback(null)}
+                className="text-emerald-700 hover:text-emerald-900 p-1 rounded-lg hover:bg-emerald-100 transition-colors"
+                aria-label="Dismiss status notification"
+              >
+                <X className="w-3.5 h-3.5" />
+              </button>
+            </div>
+          )}
+
           {/* Customer & Location Metadata Grid */}
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 p-3.5 rounded-xl bg-surface-bg border border-surface-muted text-xs">
             <div className="space-y-1">
@@ -123,6 +175,49 @@ export function EnquiryDetailModal({ enquiry, onClose }: EnquiryDetailModalProps
             </div>
           </div>
 
+          {/* Interactive Status Update Control Section */}
+          <div className="p-4 rounded-xl bg-surface-bg/70 border border-surface-muted space-y-3">
+            <div className="flex items-center justify-between">
+              <label
+                id="status-control-label"
+                className="text-xs font-bold uppercase tracking-wider text-content-secondary flex items-center space-x-1.5"
+              >
+                <CheckCircle2 className="w-4 h-4 text-brand-teal" />
+                <span>Change Enquiry Status</span>
+              </label>
+              <span className="text-[11px] text-content-muted">
+                Immediate in-memory update
+              </span>
+            </div>
+
+            <div
+              role="group"
+              aria-labelledby="status-control-label"
+              className="grid grid-cols-2 sm:grid-cols-4 gap-2"
+            >
+              {ENQUIRY_STATUSES.map((statusOption) => {
+                const isCurrent = enquiry.status === statusOption;
+                return (
+                  <button
+                    key={statusOption}
+                    type="button"
+                    onClick={() => handleStatusSelect(statusOption)}
+                    aria-pressed={isCurrent}
+                    className={`flex items-center justify-center space-x-1.5 py-2.5 px-3 rounded-xl text-xs font-semibold border transition-all ${
+                      isCurrent
+                        ? `${getStatusActiveStyle(statusOption)} cursor-default`
+                        : 'bg-white border-surface-muted text-content-secondary hover:text-content-primary hover:border-brand-teal/40 hover:bg-surface-bg shadow-xs active:scale-[0.98]'
+                    } focus-visible:outline-brand-teal`}
+                    id={`status-btn-${statusOption.toLowerCase().replace(/\s+/g, '-')}`}
+                  >
+                    {isCurrent && <CheckCircle2 className="w-3.5 h-3.5 flex-shrink-0" />}
+                    <span>{statusOption}</span>
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+
           {/* Customer Message Block */}
           <div className="space-y-2">
             <h4 className="text-xs font-bold uppercase tracking-wider text-content-secondary flex items-center space-x-1.5">
@@ -153,13 +248,18 @@ export function EnquiryDetailModal({ enquiry, onClose }: EnquiryDetailModalProps
             </div>
           </div>
 
-          {/* Non-persisted demo notice */}
-          <div className="p-3 rounded-xl bg-surface-bg border border-surface-muted flex items-center space-x-2.5 text-xs text-content-secondary">
-            <AlertCircle className="w-4 h-4 text-brand-teal flex-shrink-0" />
-            <span>
-              <strong>Demo View (Phase 3 Step 1):</strong> This view allows inspecting enquiry data.
-              Updating statuses, drafting edits, and dispatching quotes will be connected in Step 2.
-            </span>
+          {/* In-memory demo notice */}
+          <div className="p-3.5 rounded-xl bg-surface-bg border border-surface-muted flex items-start space-x-2.5 text-xs text-content-secondary">
+            <AlertCircle className="w-4 h-4 text-brand-teal flex-shrink-0 mt-0.5" />
+            <div className="space-y-0.5">
+              <span className="font-semibold text-content-primary">
+                Demo Mode Notice (In-Memory Session Only):
+              </span>
+              <p className="leading-relaxed">
+                Status changes update workspace metrics, list order, and filters immediately in React state.
+                Because backend database persistence is scheduled for future increments, any updates exist only in browser memory and will reset upon page reload.
+              </p>
+            </div>
           </div>
         </div>
 

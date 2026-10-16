@@ -23,8 +23,18 @@ export function EnquiryWorkspace({
   onOpenDiagnostics,
   backendStatus,
 }: EnquiryWorkspaceProps) {
-  const [enquiries] = useState<CustomerEnquiry[]>(DEMO_ENQUIRIES);
+  const [enquiries, setEnquiries] = useState<CustomerEnquiry[]>(DEMO_ENQUIRIES);
   const [selectedEnquiry, setSelectedEnquiry] = useState<CustomerEnquiry | null>(null);
+
+  // Status update handler: updates in-memory list and selected item
+  const handleUpdateStatus = (enquiryId: string, newStatus: CustomerEnquiry['status']) => {
+    setEnquiries((prev) =>
+      prev.map((item) => (item.id === enquiryId ? { ...item, status: newStatus } : item))
+    );
+    setSelectedEnquiry((prev) =>
+      prev && prev.id === enquiryId ? { ...prev, status: newStatus } : prev
+    );
+  };
 
   // Filter states
   const [searchQuery, setSearchQuery] = useState('');
@@ -192,7 +202,7 @@ export function EnquiryWorkspace({
           <div className="flex items-center space-x-3">
             <span>© {new Date().getFullYear()} ServiceFlow AI.</span>
             <span>•</span>
-            <span className="text-content-muted">Phase 3 Step 1: Enquiry Workspace UI</span>
+            <span className="text-content-muted">Phase 3 Step 2: Enquiry Status Operations (In-Memory)</span>
           </div>
 
           <div className="flex items-center space-x-4">
@@ -227,6 +237,11 @@ export function EnquiryWorkspace({
       <EnquiryDetailModal
         enquiry={selectedEnquiry}
         onClose={() => setSelectedEnquiry(null)}
+        onUpdateStatus={(newStatus) => {
+          if (selectedEnquiry) {
+            handleUpdateStatus(selectedEnquiry.id, newStatus);
+          }
+        }}
       />
     </div>
   );
