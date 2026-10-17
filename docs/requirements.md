@@ -1,141 +1,107 @@
 # ServiceFlow AI — Product Requirements Document (PRD)
 
 > **Tagline:** Less Admin. Better Business.  
-> **Repository:** [https://github.com/samatha-93/serviceflow-ai.git](https://github.com/samatha-93/serviceflow-ai.git)  
-> **Status:** Phase 1 Foundation
+> **Repository:** [https://github.com/samatha-93/serviceflow-ai](https://github.com/samatha-93/serviceflow-ai)  
+> **Status:** Active Development (Core Operations Implemented)  
+> **Author:** Samatha Reddy
 
 ---
 
 ## 1. Executive Summary & Vision
 
-Small and independent service businesses spend an estimated 30–40% of their working hours on routine administrative overhead: responding to repetitive enquiries, scheduling and rescheduling appointments, tracking down client details, sending quote follow-ups, and handling invoices.
+Small and independent trade and service businesses (such as landscapers, residential cleaners, handymen, and mobile wellness practitioners) face significant operational overhead when juggling customer communications, job requests, and appointment schedules across disparate channels (SMS, email, messaging apps, and paper notes).
 
-**ServiceFlow AI** is an AI-assisted service management platform engineered to automate and streamline these operational burdens. By centralizing customer interactions, booking logistics, and operational workflows into a unified, intelligent system, ServiceFlow AI allows business owners to focus on their core trade and customer relationships.
+**ServiceFlow AI** is an independently developed full-stack web application designed to centralize and streamline operational administration. The system provides a unified workspace where service operators can triage customer inquiries, inspect job details, transition inquiry states, convert inquiries directly into confirmed bookings, and maintain business-isolated operational records.
 
 ---
 
 ## 2. Target Business Categories
 
-ServiceFlow AI is purpose-built with flexible workflow configurations tailored to five primary service industries:
+ServiceFlow AI is modeled around workflows common across primary service sectors:
 
-1. **Outdoor and Property Services**
-   - *Sub-sectors:* Lawn care, landscaping, tree surgery, pressure washing, snow removal, gutter cleaning.
-   - *Key Needs:* On-site estimations, weather-dependent rescheduling, service address geo-clustering.
+1. **Outdoor and Property Services** (e.g., landscaping, lawn mowing, tree trimming, pressure washing).
+2. **Cleaning Services** (e.g., residential home cleaning, commercial office turnover, post-construction cleaning).
+3. **Home Maintenance & Repairs** (e.g., plumbing, electrical inspection, handyman services).
+4. **Beauty & Mobile Wellness** (e.g., mobile stylists, massage therapy, personal fitness trainers).
+5. **Independent Trade Professionals** (e.g., mobile notaries, home inspectors, consulting specialists).
 
-2. **Cleaning Services**
-   - *Sub-sectors:* Residential home cleaning, commercial office cleaning, post-construction cleaning, turnover/vacation rentals.
-   - *Key Needs:* Recurring schedule frequencies (weekly, bi-weekly), square-footage-based pricing, checklist verification.
-
-3. **Beauty and Wellness**
-   - *Sub-sectors:* Mobile stylists, massage therapists, estheticians, personal fitness trainers.
-   - *Key Needs:* Appointment slot booking, buffer times between clients, intake forms, deposit collection.
-
-4. **Home Maintenance**
-   - *Sub-sectors:* Handyman services, plumbing, electrical, HVAC repairs, appliance installation.
-   - *Key Needs:* Emergency inquiry tagging, job-hazard notes, parts tracking, job status transitions.
-
-5. **Independent Professionals**
-   - *Sub-sectors:* Consultants, mobile notaries, home inspectors, acoustic assessors.
-   - *Key Needs:* Milestone tracking, consultation calendars, client document collection.
+*Note: Target user categories represent design and domain modeling personas; market validation and commercial metrics have not been conducted.*
 
 ---
 
 ## 3. User Personas
 
-| Persona | Role | Key Frustrations | Primary Goal |
+| Persona | Role | Key Operational Challenge | Platform Solution |
 |---|---|---|---|
-| **Solo Operator (Alex)** | Owner & Technician | Answering calls while on a job, losing track of inquiries on SMS/WhatsApp, forgotten invoices | Instant automated responses, mobile booking link, zero admin on weekends |
-| **Crew Manager (Maria)** | Operator with 3-5 workers | Double bookings, dispatch confusion, manual route coordination | Clear daily dispatch schedule, team assignment, centralized customer history |
-| **Office Coordinator (David)**| Part-time Administrative Assistant | Repetitive customer queries, chasing unpaid deposits | AI drafted email responses, automated reminders, organized pipeline |
+| **Solo Operator** | Business owner & technician | Missing inquiries while on job sites; disorganized scheduling | Centralized enquiry inbox and one-click booking conversion |
+| **Small Crew Lead** | Owner with 2–5 technicians | Confusion regarding assignment, timeslots, and job notes | Unified booking board with assignee tracking and address records |
+| **Prospective Client** | End customer | Slow response times and lack of clear service specifications | Structured inquiry intake and contextual response drafting |
 
 ---
 
-## 4. Functional Requirements
+## 4. Functional Requirements & Implementation Status
 
-### 4.1 Module 1: Enquiries & Lead Management
-- **FR-1.1:** Web-based enquiry intake form customizable by business vertical.
-- **FR-1.2:** Unified enquiry inbox showing lead status (`New`, `Contacted`, `Quoted`, `Booked`, `Archived`).
-- **FR-1.3:** Extraction of key inquiry attributes: requested service, urgency, location, preferred time window.
-- **FR-1.4:** Quick conversion of an approved enquiry into a confirmed booking or estimate.
+### 4.1 Module 1: Authentication & Business Isolation
+- **PRD-1.1 (Implemented):** Business owner registration with name, business name, email, and password.
+- **PRD-1.2 (Implemented):** Secure password hashing using `bcryptjs` and session issuance via JWT stored in an `HttpOnly`, `SameSite` cookie.
+- **PRD-1.3 (Implemented):** Tenant partitioning: Every registered business is assigned a unique UUID `businessId`. All created records (enquiries, bookings, profiles) are stamped and strictly scoped to this identifier.
+- **PRD-1.4 (Implemented):** Public Demo Mode: Unauthenticated visitors can inspect pre-seeded demo records (`DEMO_TENANT_ID`) without accessing private tenant data or executing database writes.
 
-### 4.2 Module 2: Bookings & Smart Scheduling
-- **FR-2.1:** Interactive calendar view supporting Day, Week, and Month visualizations.
-- **FR-2.2:** Service catalog definition (service name, description, duration, buffer times, base price).
-- **FR-2.3:** Business operating hours and availability blackout windows.
-- **FR-2.4:** Booking status lifecycle: `Pending`, `Confirmed`, `In-Progress`, `Completed`, `Cancelled`.
-- **FR-2.5:** Rescheduling workflow with automated notification trigger.
+### 4.2 Module 2: Enquiry Management & Triage
+- **PRD-2.1 (Implemented):** Centralized Enquiry Workspace displaying customer name, contact location, service category, urgency, status, and received timestamp.
+- **PRD-2.2 (Implemented):** Multi-dimensional filtering by search query, status (`Awaiting Review`, `Quoted`, `Booked`, `Archived`), service category, and urgency level (`Urgent`, `High`, `Standard`, `Flexible`).
+- **PRD-2.3 (Implemented):** Real-time metric counters summarizing total inquiries, pending reviews, sent quotes, and confirmed conversions.
+- **PRD-2.4 (Implemented):** Detailed inspection modal displaying full message text, AI response preview, and status mutation actions.
+- **PRD-2.5 (Implemented):** RESTful endpoints for enquiry retrieval, creation, and status transitions with MongoDB persistence via Mongoose.
 
-### 4.3 Module 3: Customer Management (CRM) & Job Records
-- **FR-3.1:** Customer profile records (name, email, phone, billing address, service locations, internal notes).
-- **FR-3.2:** Complete historical timeline of customer interactions, past bookings, and invoices.
-- **FR-3.3:** Customer tagging (e.g., `VIP`, `Recurring`, `Commercial`, `Delinquent`).
-- **FR-3.4:** Quick customer search and filter by phone number, name, or address.
+### 4.3 Module 3: Booking Management & Enquiry Conversion
+- **PRD-3.1 (Implemented):** Dedicated Bookings board displaying confirmed, pending, completed, and cancelled service appointments.
+- **PRD-3.2 (Implemented):** Enquiry-to-Booking conversion workflow: Users can convert an incoming enquiry directly into a scheduled booking from the detail modal, specifying date, time, duration, assignee, and notes.
+- **PRD-3.3 (Implemented):** State consistency & compensation: Converting an enquiry marks its status as `Booked`. If status synchronization fails during creation, a compensating rollback deletes the newly created booking to prevent orphan records.
+- **PRD-3.4 (Implemented):** Duplicate prevention: Prevents re-converting an enquiry that has already been converted into an existing booking (HTTP 409 Conflict).
+- **PRD-3.5 (Implemented):** Booking status updates with ownership verification.
 
-### 4.4 Module 4: AI-Assisted Administrative Automation *(Planned for Phases 3-4)*
-- **FR-4.1:** AI-assisted triage: automatically categorize inquiries by sentiment and urgency.
-- **FR-4.2:** Contextual response generation: draft polite, accurate quote and availability emails for one-click approval.
-- **FR-4.3:** Smart schedule optimization: recommend booking slots that minimize travel time and avoid scheduling conflicts.
-- **FR-4.4:** Proactive follow-up prompts for stalled quotes or overdue invoices.
+### 4.4 Module 4: Business Profile Management
+- **PRD-4.1 (Backend Implemented):** Backend models, repository, and REST endpoints (`GET`, `PUT`, `PATCH /api/business-profile`) for business details, tagline, description, contact details, operating location, and service categories.
+- **PRD-4.2 (Backend Implemented):** Public business profile retrieval endpoint (`GET /api/business-profile/public/:businessId`).
+- **PRD-4.3 (Planned / In Progress):** Client-side profile configuration settings view and public business showcase page.
 
-### 4.5 Module 5: Estimates & Invoicing *(Planned for Phase 5)*
-- **FR-5.1:** Professional PDF quote generation with line items, tax, and terms.
-- **FR-5.2:** Digital quote acceptance with client signature/approval.
-- **FR-5.3:** Conversion of completed jobs into payment-ready invoices.
+### 4.5 Module 5: AI-Assisted Administrative Automation
+- **PRD-5.1 (Partially Implemented / Simulated):** Contextual response drafts and urgency categorization displayed in UI and mock/seed payloads.
+- **PRD-5.2 (Planned):** Direct integration with LLM providers (e.g. OpenAI or Anthropic API) for dynamic prompt generation, automated email draft generation, and inquiry triage.
+
+### 4.6 Module 6: Customer CRM & Invoicing
+- **PRD-6.1 (Planned):** Dedicated customer database with historical timeline of visits, lifetime value, and notes.
+- **PRD-6.2 (Planned):** Digital estimate and invoice generation with exportable PDF documents.
 
 ---
 
 ## 5. Non-Functional Requirements (NFRs)
 
-### 5.1 Performance
-- **NFR-1.1:** Frontend initial load time must remain under 1.5 seconds on 4G connections.
-- **NFR-1.2:** API endpoints must respond within 200ms under standard operational loads.
-- **NFR-1.3:** Type-safe builds and production bundles optimized via Vite code splitting.
+### 5.1 System Reliability & Fault Tolerance
+- **NFR-1.1 (Graceful Degradation):** The Express API starts and serves health checks and public demo data even if local MongoDB is offline, reporting database status via headers and JSON responses.
+- **NFR-1.2 (Process Lifecycle):** Clean handling of `SIGTERM` and `SIGINT` signals with graceful teardown of HTTP servers and database handles.
 
-### 5.2 Security & Compliance
-- **NFR-2.1:** Adherence to zero-secret repository commits; all credentials isolated in `.env` files.
-- **NFR-2.2:** HTTP security headers enforced through `helmet` middleware.
-- **NFR-2.3:** Strict CORS configuration restricting unauthorized external origins.
-- **NFR-2.4:** Input validation and parameter sanitization on all incoming request payloads.
+### 5.2 Security & Data Privacy
+- **NFR-2.1 (Credential Hygiene):** Zero-secrets policy. All configuration parameters are managed through environment variables and documented via `.env.example` templates.
+- **NFR-2.2 (HTTP Security Headers):** Secure HTTP header baseline enforced through `helmet`.
+- **NFR-2.3 (CORS Whitelisting):** Cross-Origin Resource Sharing strictly limited to verified client origins.
+- **NFR-2.4 (Cookie Protections):** Authentication tokens transmitted via `HttpOnly`, `SameSite=lax` cookies.
 
-### 5.3 Reliability & Availability
-- **NFR-3.1:** Stateless Express server architecture allowing containerization and zero-downtime restarts.
-- **NFR-3.2:** Non-blocking database connections with graceful degradation (e.g. Phase 1 health endpoints operate even in offline database mode).
-- **NFR-3.3:** Graceful process shutdown handling `SIGTERM` and `SIGINT` signals.
-
-### 5.4 Usability & Accessibility
-- **NFR-4.1:** Responsive design adapting to mobile handsets, tablets, and desktop workstations.
-- **NFR-4.2:** Modern, accessible UI meeting WCAG 2.1 AA standards for color contrast and focus states.
-- **NFR-4.3:** Adherence to the ServiceFlow AI Design System:
-  - Primary Teal: `#176B67`
-  - Background: `#F7F7F2`
-  - Cards: `#FFFFFF`
-  - Primary Text: `#242A2A`
-  - Secondary Text: `#66716F`
-  - Font: Inter
+### 5.3 Code Quality & Typing
+- **NFR-3.1 (Full-Stack TypeScript):** End-to-end static typing across both `client` and `server` packages with strict TypeScript compiler configurations.
+- **NFR-3.2 (Repository Pattern):** Clean separation of concerns isolating HTTP controllers from Mongoose query logic via strongly-typed repository classes.
 
 ---
 
-## 6. Phased Implementation Roadmap
+## 6. Implementation Status Summary
 
-- [x] **Phase 1: Project Foundation & Architecture** (Current)
-  - Monorepo structure (`client/`, `server/`, `docs/`)
-  - React + TypeScript + Vite + Tailwind CSS frontend
-  - Node.js + Express + TypeScript backend
-  - Root scripts and Git configuration
-  - System health probe and documentation
-- [ ] **Phase 2: Database Modeling & Core REST APIs**
-  - Mongoose models for Customer, Service, Enquiry, and Booking
-  - CRUD controllers and validation middleware (Zod)
-  - Seed scripts for mock service business data
-- [ ] **Phase 3: Interactive Dashboard & Operations UI**
-  - Responsive layout with sidebar navigation
-  - Enquiry management board & booking calendar
-  - Customer directory and job detail views
-- [ ] **Phase 4: AI Copilot & Automation Engine**
-  - Inquiry classification pipeline
-  - Smart reply drafting and schedule suggestions
-  - Audit logging and human-in-the-loop approvals
-- [ ] **Phase 5: Financial Operations & Polish**
-  - Quotes, estimates, and invoice generation
-  - Export capabilities (CSV, PDF)
-  - Production deployment configuration
+| Phase | Scope | Status | Notes |
+|---|---|---|---|
+| **Phase 1** | Monorepo setup, React + Express foundation, Design System | **Completed** | Clean build pipeline, health probe, design tokens |
+| **Phase 2** | MongoDB persistence, Enquiry CRUD, Seeding | **Completed** | Mongoose models, repository abstraction, idempotent seeders |
+| **Phase 3** | Authentication & Business Isolation | **Completed** | JWT auth, HttpOnly cookies, multi-tenant UUID scoping |
+| **Phase 4** | Booking Management & Enquiry Conversion | **Completed** | Bookings view, conversion workflow, compensating rollback |
+| **Phase 5** | Business Profile Backend | **Completed (Backend)** | Endpoints and models ready; frontend UI in progress |
+| **Phase 6** | Business Profile Frontend & Showcase | **Planned** | Settings dashboard and public landing page |
+| **Phase 7** | LLM Integration & Production Automated Tests | **Planned** | Real AI completion pipelines and Vitest/Jest suite |

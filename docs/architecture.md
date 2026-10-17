@@ -1,34 +1,54 @@
 # ServiceFlow AI — System Architecture & Technical Design
 
 > **Tagline:** Less Admin. Better Business.  
-> **Repository:** [https://github.com/samatha-93/serviceflow-ai.git](https://github.com/samatha-93/serviceflow-ai.git)  
-> **Status:** Phase 1 Foundation
+> **Repository:** [https://github.com/samatha-93/serviceflow-ai](https://github.com/samatha-93/serviceflow-ai)  
+> **Status:** Active Development (Core Operations Implemented)  
+> **Author:** Samatha Reddy
 
 ---
 
 ## 1. System Topology Overview
 
-ServiceFlow AI is structured as a maintainable, high-performance monorepo separating client presentation, server API services, and shared documentation.
+ServiceFlow AI is architected as a modular TypeScript monorepo utilizing npm workspaces. The system decouples client-side presentation from backend RESTful business logic and persistence layers.
 
-```
-+-------------------------------------------------------------------------+
-|                              Client Layer                                |
-|  React 18  *  TypeScript  *  Vite  *  Tailwind CSS  *  Inter Typography  |
-|  (Port: 5173  *  Reverse Proxy: /api -> http://localhost:5000)          |
-+------------------------------------+------------------------------------+
-                                     |  HTTP / REST (JSON)
-                                     v
-+-------------------------------------------------------------------------+
-|                              Backend Layer                              |
-|  Node.js (>=18)  *  Express  *  TypeScript  *  Helmet  *  CORS          |
-|  (Port: 5000  *  Layered Architecture: Config / Routes / Controllers)    |
-+------------------------------------+------------------------------------+
-                                     |  Mongoose ODM (Non-blocking)
-                                     v
-+-------------------------------------------------------------------------+
-|                               Data Layer                                 |
-|  MongoDB (Standby-resilient in Phase 1; schemas planned for Phase 2)     |
-+-------------------------------------------------------------------------+
+```mermaid
+graph TD
+    subgraph ClientLayer ["Client Layer (Port 5173)"]
+        UI["React 18 + TypeScript + Vite"]
+        TW["Tailwind CSS + Lucide Icons"]
+        Router["Hash Router / Workspace Views"]
+        Services["API Client Services (Fetch)"]
+        UI --> Router
+        UI --> TW
+        Router --> Services
+    end
+
+    subgraph ServerLayer ["Server Layer (Port 5000)"]
+        App["Express 4 Application"]
+        Sec["Security Middleware (Helmet, CORS, CookieParser)"]
+        AuthMid["Auth Middleware (requireAuth, optionalAuth)"]
+        Routes["REST Routing Layer (/api/*)"]
+        Controllers["Controller Layer (Validation & HTTP Mapping)"]
+        Repos["Repository Layer (Data Access & Business Isolation)"]
+
+        App --> Sec
+        Sec --> Routes
+        Routes --> AuthMid
+        AuthMid --> Controllers
+        Controllers --> Repos
+    end
+
+    subgraph DataLayer ["Data Layer (Port 27017)"]
+        Mongoose["Mongoose ODM 8"]
+        MongoDB[("MongoDB")]
+        Standby["Graceful Offline Fallback"]
+
+        Repos --> Mongoose
+        Mongoose --> MongoDB
+        Mongoose -.-> Standby
+    end
+
+    Services -- "HTTP / REST (JSON with JWT Cookie)" --> App
 ```
 
 ---
@@ -37,143 +57,156 @@ ServiceFlow AI is structured as a maintainable, high-performance monorepo separa
 
 ```
 Service-AI-Flow/
-├── client/                     # Frontend Application (React + Vite + TS)
-│   ├── public/                 # Static assets (favicon.svg, manifest)
+├── client/                                 # Frontend SPA Workspace
+│   ├── public/                             # Static assets (favicon.svg)
 │   ├── src/
-│   │   ├── App.tsx             # Primary application dashboard shell
-│   │   ├── index.css           # Tailwind directives & design system rules
-│   │   └── main.tsx            # React DOM bootstrap
-│   ├── .env.example            # Client environment variable template
-│   ├── index.html              # HTML5 entry with Google Fonts (Inter) & SEO
-│   ├── package.json            # Client dependencies & scripts
-│   ├── postcss.config.js       # PostCSS Tailwind & Autoprefixer plugin config
-│   ├── tailwind.config.js      # Design tokens (Colors, typography, shadows)
-│   ├── tsconfig.json           # Client TypeScript configuration
-│   └── vite.config.ts          # Vite build config with local API proxy
+│   │   ├── components/                     # Modular React Components
+│   │   │   ├── auth/                       # Authentication Modals (Login, Register)
+│   │   │   ├── bookings/                   # Bookings Board & Schedule View
+│   │   │   ├── enquiries/                  # Enquiry Workspace, Filters, Metrics, Detail Modal
+│   │   │   ├── DashboardPreview.tsx        # Interactive Product Preview
+│   │   │   ├── Features.tsx                # Feature Highlights
+│   │   │   ├── Navbar.tsx                  # Navigation & Session Bar
+│   │   │   └── SystemDiagnosticsModal.tsx  # API/DB Health Probe Modal
+│   │   ├── data/                           # Client-side Demo Data Fallbacks
+│   │   ├── services/                       # API Client Services (auth, enquiry, booking)
+│   │   ├── App.tsx                         # Primary Application Shell & View Orchestration
+│   │   ├── index.css                       # Tailwind Directives & Custom Color Tokens
+│   │   ├── main.tsx                        # DOM Bootstrap
+│   │   └── types.ts                        # Client-side TypeScript Interfaces
+│   ├── package.json                        # Frontend Dependencies & Scripts
+│   ├── tailwind.config.js                  # Design System Tokens
+│   └── vite.config.ts                      # Vite Configuration & /api Reverse Proxy
 │
-├── server/                     # Backend API Service (Node.js + Express + TS)
+├── server/                                 # Backend REST API Workspace
 │   ├── src/
-│   │   ├── config/             # System configuration
-│   │   │   ├── database.ts     # MongoDB / Mongoose connection with standby fallback
-│   │   │   └── env.ts          # Strongly typed environment configuration
-│   │   ├── controllers/        # Request handlers
-│   │   │   └── health.controller.ts # Health check controller
-│   │   ├── routes/             # Express route declarations
-│   │   │   ├── health.routes.ts # Health route endpoints
-│   │   │   └── index.ts        # Centralized API router (/api)
-│   │   ├── app.ts              # Express application configuration & middleware
-│   │   └── index.ts            # Server entry point & process lifecycle
-│   ├── .env.example            # Backend environment variable template
-│   ├── package.json            # Server dependencies & scripts
-│   └── tsconfig.json           # Server TypeScript configuration
+│   │   ├── config/                         # Configuration & Database Lifecycle
+│   │   │   ├── database.ts                 # MongoDB / Mongoose Connection & Standby Logic
+│   │   │   └── env.ts                      # Strongly-typed Environment Settings
+│   │   ├── controllers/                    # Request Validation & HTTP Handlers
+│   │   │   ├── auth.controller.ts          # Register, Login, Session, Logout Handlers
+│   │   │   ├── booking.controller.ts       # Booking Retrieval, Creation & Status Handlers
+│   │   │   ├── businessProfile.controller.ts # Business Profile Management Handlers
+│   │   │   ├── enquiry.controller.ts       # Enquiry Listing, Inspection & Status Handlers
+│   │   │   └── health.controller.ts        # System & Database Health Probe
+│   │   ├── data/                           # Idempotent Seed Data & Initial Fixtures
+│   │   │   ├── mockBookings.ts             # Initial Demo Bookings
+│   │   │   ├── mockBusinessProfile.ts      # Initial Demo Business Profile
+│   │   │   ├── mockEnquiries.ts            # Initial Demo Enquiries
+│   │   │   └── seed.ts                     # Controlled MongoDB Upsert Seeders
+│   │   ├── middleware/                     # Express Middleware
+│   │   │   └── auth.middleware.ts          # requireAuth & optionalAuth JWT Interceptors
+│   │   ├── models/                         # Mongoose Schemas & Schema Validation
+│   │   │   ├── booking.model.ts            # Booking Schema & Compound Indexes
+│   │   │   ├── businessProfile.model.ts    # Business Profile Schema
+│   │   │   ├── enquiry.model.ts            # Enquiry Schema & Indexes
+│   │   │   └── user.model.ts               # User Schema & Password Salt Hash
+│   │   ├── repositories/                   # Data Access Abstraction Layer
+│   │   │   ├── booking.repository.ts       # Booking Persistence & Tenant Scoping
+│   │   │   ├── businessProfile.repository.ts # Profile Persistence & Scoping
+│   │   │   ├── enquiry.repository.ts       # Enquiry Persistence & Scoping
+│   │   │   └── user.repository.ts          # User Query & Registration
+│   │   ├── routes/                         # Express Route Definitions
+│   │   │   ├── auth.routes.ts              # /api/auth Endpoints
+│   │   │   ├── booking.routes.ts           # /api/bookings Endpoints
+│   │   │   ├── businessProfile.routes.ts   # /api/business-profile Endpoints
+│   │   │   ├── enquiry.routes.ts           # /api/enquiries Endpoints
+│   │   │   ├── health.routes.ts            # /api/health Endpoint
+│   │   │   └── index.ts                    # Consolidated API Router
+│   │   ├── types/                          # Backend TypeScript Type Definitions
+│   │   ├── utils/                          # Cryptographic & Token Utilities
+│   │   │   └── token.util.ts               # JWT Signing, Cookie Setting, Token Verification
+│   │   ├── app.ts                          # Express Application Middleware Setup
+│   │   └── index.ts                        # HTTP Server Entry Point & Process Handlers
+│   ├── package.json                        # Server Dependencies & Scripts
+│   └── tsconfig.json                       # Server TypeScript Configuration
 │
-├── docs/                       # Project Documentation
-│   ├── architecture.md         # System design & technical architecture
-│   └── requirements.md         # Product requirements document (PRD)
+├── docs/                                   # Project Documentation
+│   ├── architecture.md                     # Technical Architecture & Design
+│   └── requirements.md                     # Product Requirements Document
 │
-├── .env.example                # Root environment guide
-├── .gitignore                  # Comprehensive Git exclusion rules
-├── package.json                # Monorepo workspaces & concurrent scripts
-└── README.md                   # Project overview, installation, & workflow guide
+├── .env.example                            # Root Environment Variable Template
+├── package.json                            # Monorepo Workspace Configuration
+└── README.md                               # Repository Documentation
 ```
 
 ---
 
-## 3. Frontend Architecture
+## 3. Data Isolation & Multi-Tenancy Architecture
 
-### 3.1 Technology Stack
-- **Framework:** React 18
-- **Language:** TypeScript 5
-- **Build Tool:** Vite 6
-- **Styling:** Tailwind CSS 3
-- **Iconography:** Lucide React
+ServiceFlow AI implements **logical tenant isolation** to guarantee that registered businesses cannot access or manipulate other businesses' operational records:
 
-### 3.2 Design System Tokens
-The user interface adheres to strict design system standards:
-
-| Token Name | Hex Value | Semantic Role |
-|---|---|---|
-| **Primary Teal** | `#176B67` | Primary brand color, key actions, badges, active states |
-| **Teal Light** | `#218E89` | Hover states, secondary accents |
-| **Teal Dark** | `#104C49` | Deep gradients, text highlights |
-| **Surface Background** | `#F7F7F2` | Warm neutral page background |
-| **Surface Card** | `#FFFFFF` | Elevation cards, modals, content containers |
-| **Primary Text** | `#242A2A` | High-contrast headings and body copy |
-| **Secondary Text** | `#66716F` | Subtitles, helper text, and inactive states |
-| **Typography** | Inter | Modern sans-serif via Google Fonts |
-
-### 3.3 Component Design Principles
-- **Predictable State Flow:** State is managed locally or through React Context where cross-component sharing is required.
-- **Fail-Safe Health Polling:** The client gracefully handles backend connectivity states (Offline, Connecting, Operational) without unhandled promise rejections.
-- **Tailwind Modularity:** Styles are organized through semantic Tailwind classes backed by curated tokens defined in `tailwind.config.js`.
+1. **Unique Business Identifier:** When a user registers an account, a distinct UUID v4 `businessId` is generated and assigned to that business account.
+2. **JWT Claims:** The issued JSON Web Token encapsulates `{ userId, businessId, email, role }`.
+3. **Cookie Authentication:** The token is stored in an `HttpOnly`, `SameSite=lax` cookie (`sf_auth_token`), preventing cross-site scripting (XSS) extraction.
+4. **Scoped Repositories:** All data access methods in `bookingRepository`, `enquiryRepository`, and `businessProfileRepository` mandate tenant scoping:
+   - Queries automatically filter by `{ businessId: callerBusinessId }`.
+   - Mutation operations (`create`, `updateStatus`, `deleteById`) explicitly verify business ownership before modifying records.
+5. **Database Indexing:** Compound indexes are applied at the database level:
+   - Bookings: `{ businessId: 1, id: 1 }` and `{ businessId: 1, enquiryId: 1 }`
+   - Enquiries: `{ businessId: 1, id: 1 }`
+   - Business Profile: `{ businessId: 1 }` (unique)
+6. **Public Demo Isolation:** Unauthenticated requests map to a shared constant `DEMO_TENANT_ID`. Read operations return demo data, while write operations require authentication or apply locally in client memory only.
 
 ---
 
-## 4. Backend Architecture
+## 4. Enquiry-to-Booking State Machine & Compensation
 
-### 4.1 Technology Stack
-- **Runtime:** Node.js (v18+)
-- **Framework:** Express 4
-- **Language:** TypeScript 5
-- **Database ODM:** Mongoose 8
-- **Development Tooling:** TSX (watch mode)
+Converting an incoming enquiry into a confirmed service appointment requires coordinating state across two distinct domain models:
 
-### 4.2 Layered Architecture Pattern
-The backend adheres to a clean separation of concerns:
+```mermaid
+sequenceDiagram
+    autonumber
+    actor User as Business Operator
+    participant Client as React Client (Modal)
+    participant API as Booking Controller
+    participant BRepo as Booking Repository
+    participant ERepo as Enquiry Repository
+    participant DB as MongoDB
 
-1. **Config Layer (`src/config/`):** Isolates environment variable parsing (`env.ts`) and database lifecycle management (`database.ts`).
-2. **Application Layer (`src/app.ts`):** Enforces security headers via `helmet`, controls cross-origin access with `cors`, logs incoming requests, and handles global 404 and 500 errors.
-3. **Routing Layer (`src/routes/`):** Maps REST endpoints to corresponding controllers without mixing business logic.
-4. **Controller Layer (`src/controllers/`):** Extracts request parameters, delegates to service logic, and returns formatted JSON responses.
-5. **Data Layer (`src/models/` - Planned for Phase 2):** Encapsulates Mongoose schemas, indexes, and validation rules.
-
-### 4.3 Resilience & Standby Mode
-Phase 1 does not require an active MongoDB instance to complete health checks:
-- The database connection is initiated asynchronously without blocking the Express listener.
-- If MongoDB is unreachable, the system enters an informative **standby mode** rather than throwing fatal unhandled exceptions.
-- The `/api/health` endpoint exposes real-time database connection status (`connected`, `connecting`, or `disconnected`).
-
----
-
-## 5. Security & Environment Configuration
-
-### 5.1 Zero-Secrets Policy
-- No credentials, tokens, connection strings, or sensitive keys are committed to version control.
-- Git excludes `.env`, `*.env`, and local variant files.
-- Safe templates (`.env.example`) are provided at the root, client, and server levels.
-
-### 5.2 Defensive Defaults
-- `helmet()` automatically secures HTTP response headers against clickjacking, sniffing, and XSS.
-- CORS is locked to `CLIENT_ORIGIN` (`http://localhost:5173` in development).
-- Server gracefully captures `SIGINT` and `SIGTERM` signals, closing open socket connections and database handles cleanly.
-
----
-
-## 6. Monorepo Scripts & Developer Experience
-
-The root `package.json` uses npm workspaces to coordinate client and server tasks from a single command line:
-
-```bash
-# Run client and server concurrently in development
-npm run dev
-
-# Run only the client (Vite: http://localhost:5173)
-npm run dev:client
-
-# Run only the server (TSX watch: http://localhost:5000)
-npm run dev:server
-
-# Perform type checking across both workspaces
-npm run type-check
-
-# Compile production bundles for client and server
-npm run build
+    User->>Client: Clicks "Convert to Booking" and fills schedule
+    Client->>API: POST /api/bookings (includes enquiryId)
+    API->>API: Validate inputs (date format, required fields, JWT)
+    API->>ERepo: Verify enquiry ownership & existence
+    API->>BRepo: Check if enquiryId already converted
+    alt Enquiry Already Converted
+        API-->>Client: 409 Conflict (Duplicate Conversion)
+    else Enquiry Valid
+        API->>BRepo: Create new Booking record
+        BRepo->>DB: Insert Booking Document
+        DB-->>BRepo: Success (Booking ID)
+        API->>ERepo: Update Enquiry status to 'Booked'
+        alt Enquiry Update Succeeds
+            ERepo->>DB: Update Enquiry Document
+            API-->>Client: 201 Created (Booking Data)
+        else Enquiry Update Fails
+            API->>BRepo: Compensating Rollback: Delete created Booking
+            BRepo->>DB: Remove orphan Booking Document
+            API-->>Client: 500 / 503 Internal Error (Rollback Complete)
+        end
+    end
 ```
 
+This pattern ensures that a failure in the second operation does not leave orphan bookings or inconsistent enquiry states.
+
 ---
 
-## 7. Next Architectural Milestones (Phases 2-4)
+## 5. Graceful Standby & Database Resilience
 
-1. **Phase 2 (Mongoose Schemas & Validation):** Define schemas for `Business`, `Customer`, `ServiceItem`, `Enquiry`, and `Booking`. Integrate `zod` for type-safe schema validation.
-2. **Phase 3 (Dashboard Layout & State Management):** Implement reusable layout shells, navigation drawers, and data tables.
-3. **Phase 4 (AI Engine Orchestration):** Integrate LLM adapter layer with prompt templates, structured output parsing, and rate-limiting safeguards.
+To facilitate seamless local development and portfolio demonstration:
+- **Non-blocking Initialization:** The backend Express server initiates MongoDB connection asynchronously without blocking the server listener.
+- **Standby Mode:** If MongoDB is offline or unreachable, the server continues running in `standby` mode rather than crashing.
+- **Diagnostic Endpoint:** `GET /api/health` exposes system uptime, memory usage, environment, and real-time database connection state (`connected`, `connecting`, `disconnected`).
+- **Idempotent Seeding:** On successful database connection, controlled seeders use `bulkWrite` with `$setOnInsert` to populate demo data without duplicating records across server restarts.
+
+---
+
+## 6. Security Baseline
+
+- **Password Storage:** Salted and hashed using `bcryptjs` (salt rounds: 10).
+- **Session Tokens:** Signed with HMAC SHA-256 (`jsonwebtoken`), protected by `HttpOnly` and `SameSite` cookies with configurable expiration.
+- **HTTP Headers:** Configured with `helmet` to mitigate cross-site scripting, MIME sniffing, and clickjacking.
+- **CORS and CSRF Protection:** Credentialed browser requests use the exact configured `CLIENT_ORIGINS` allowlist. Mutating requests validate Origin independently of CORS; cookie-authenticated requests require an allowed Origin, while no-Origin Bearer clients remain supported. Missing Origin with a cookie, `null`, malformed, and untrusted origins are rejected. Non-browser requests without Origin remain available. This origin policy does not replace broader CSRF review for future authentication flows.
+- **Authentication Throttling:** Login and registration share a configurable in-memory per-IP fixed-window limit; multi-instance deployments need a shared rate-limit store for consistent enforcement.
+- **Request Size Limits:** JSON bodies are limited to 1 MB and URL-encoded bodies to 100 KB; oversized bodies receive HTTP 413.
+- **Input Sanitization:** Controllers validate payload schemas, string lengths, date formats, and enumerated status strings prior to repository execution.
