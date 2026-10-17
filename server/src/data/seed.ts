@@ -2,6 +2,8 @@ import { EnquiryModel } from '../models/enquiry.model';
 import { INITIAL_DEMO_ENQUIRIES } from './mockEnquiries';
 import { BookingModel } from '../models/booking.model';
 import { INITIAL_DEMO_BOOKINGS } from './mockBookings';
+import { BusinessProfileModel } from '../models/businessProfile.model';
+import { INITIAL_DEMO_PROFILE } from './mockBusinessProfile';
 
 /**
  * Seed initial demo enquiries into MongoDB.
@@ -72,5 +74,33 @@ export async function seedDemoBookings(): Promise<void> {
   } catch (error) {
     const message = error instanceof Error ? error.message : 'Unknown error';
     console.error(`[Database] Error during demo bookings seeding: ${message}`);
+  }
+}
+
+/**
+ * Seed initial demo business profile into MongoDB.
+ *
+ * Controlled & Idempotent:
+ * - Uses updateOne with $setOnInsert based on businessId.
+ * - If profile already exists, it is left completely untouched.
+ */
+export async function seedDemoBusinessProfile(): Promise<void> {
+  try {
+    await BusinessProfileModel.init();
+
+    const result = await BusinessProfileModel.updateOne(
+      { businessId: INITIAL_DEMO_PROFILE.businessId },
+      { $setOnInsert: INITIAL_DEMO_PROFILE },
+      { upsert: true }
+    );
+
+    if (result.upsertedCount > 0) {
+      console.log(`[Database] Seeded demo business profile (${INITIAL_DEMO_PROFILE.businessName}) into MongoDB.`);
+    } else {
+      console.log('[Database] Demo business profile already present in MongoDB. No duplicate seeding needed.');
+    }
+  } catch (error) {
+    const message = error instanceof Error ? error.message : 'Unknown error';
+    console.error(`[Database] Error during demo business profile seeding: ${message}`);
   }
 }

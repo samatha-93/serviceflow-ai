@@ -22,6 +22,48 @@ export interface UserProfile {
   createdAt?: string;
 }
 
+export interface BusinessProfile {
+  id: string;
+  businessId: string;
+  businessName: string;
+  tagline?: string;
+  description: string;
+  contact: {
+    email: string;
+    phone?: string;
+    website?: string;
+  };
+  location: {
+    address?: string;
+    city: string;
+    state?: string;
+    postalCode?: string;
+    country?: string;
+  };
+  categories: string[];
+  createdAt?: string;
+  updatedAt?: string;
+}
+
+export interface UpdateBusinessProfilePayload {
+  businessName: string;
+  tagline: string;
+  description: string;
+  contact: {
+    email: string;
+    phone: string;
+    website: string;
+  };
+  location: {
+    address: string;
+    city: string;
+    state: string;
+    postalCode: string;
+    country: string;
+  };
+  categories: string[];
+}
+
 export interface CustomerEnquiry {
   id: string;
   businessId?: string;
