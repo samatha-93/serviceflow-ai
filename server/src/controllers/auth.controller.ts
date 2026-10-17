@@ -71,7 +71,6 @@ export async function register(req: AuthenticatedRequest, res: Response): Promis
       message: 'Account registered successfully.',
       data: {
         user: userProfile,
-        token,
       },
     });
   } catch (error: any) {
@@ -148,7 +147,6 @@ export async function login(req: AuthenticatedRequest, res: Response): Promise<v
       message: 'Authentication successful.',
       data: {
         user: userProfile,
-        token,
       },
     });
   } catch (error) {

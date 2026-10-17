@@ -9,10 +9,12 @@ dotenv.config({ path: path.resolve(__dirname, '../../../.env') });
 export interface AppConfig {
   port: number;
   nodeEnv: string;
-  clientOrigin: string;
+  clientOrigins: string[];
   mongodbUri: string;
   jwtSecret: string;
   jwtExpiresIn: string;
+  authRateLimitMax: number;
+  authRateLimitWindowMs: number;
 }
 
 const nodeEnv = process.env.NODE_ENV || 'development';
@@ -40,11 +42,55 @@ function resolveJwtSecret(): string {
   return crypto.randomBytes(32).toString('hex');
 }
 
+function resolveClientOrigins(): string[] {
+  const configured = process.env.CLIENT_ORIGINS !== undefined
+    ? process.env.CLIENT_ORIGINS.split(',')
+    : process.env.CLIENT_ORIGIN !== undefined
+      ? [process.env.CLIENT_ORIGIN]
+      : nodeEnv === 'development'
+        ? ['http://localhost:5173']
+        : [];
+
+  return configured.map((value) => {
+    const candidate = value.trim();
+    try {
+      const parsed = new URL(candidate);
+      if (
+        !candidate ||
+        !['http:', 'https:'].includes(parsed.protocol) ||
+        parsed.pathname !== '/' ||
+        parsed.search ||
+        parsed.hash ||
+        parsed.username ||
+        parsed.password
+      ) {
+        throw new Error();
+      }
+      return parsed.origin;
+    } catch {
+      throw new Error('CLIENT_ORIGINS must contain comma-separated HTTP(S) origins.');
+    }
+  });
+}
+
+function resolvePositiveInteger(name: string, fallback: number): number {
+  const value = process.env[name];
+  if (value === undefined) return fallback;
+
+  const parsed = Number(value);
+  if (!Number.isSafeInteger(parsed) || parsed < 1) {
+    throw new Error(`${name} must be a positive integer.`);
+  }
+  return parsed;
+}
+
 export const config: AppConfig = {
   port: parseInt(process.env.PORT || '5000', 10),
   nodeEnv,
-  clientOrigin: process.env.CLIENT_ORIGIN || 'http://localhost:5173',
+  clientOrigins: resolveClientOrigins(),
   mongodbUri: process.env.MONGODB_URI || 'mongodb://localhost:27017/serviceflow-ai',
   jwtSecret: resolveJwtSecret(),
   jwtExpiresIn: process.env.JWT_EXPIRES_IN || '7d',
+  authRateLimitMax: resolvePositiveInteger('AUTH_RATE_LIMIT_MAX', 10),
+  authRateLimitWindowMs: resolvePositiveInteger('AUTH_RATE_LIMIT_WINDOW_MS', 15 * 60 * 1000),
 };
