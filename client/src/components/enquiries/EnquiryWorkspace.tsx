@@ -11,18 +11,24 @@ import {
   UserCheck,
   LogOut,
   Calendar as CalendarIcon,
+  Settings2,
+  Plus,
+  CheckCircle2,
+  X,
 } from 'lucide-react';
 
 import { CustomerEnquiry, Booking, BookingStatus, CreateBookingPayload, UserProfile } from '../../types';
 import { DEMO_ENQUIRIES } from '../../data/mockEnquiries';
 import { DEMO_BOOKINGS } from '../../data/mockBookings';
-import { fetchEnquiries, patchEnquiryStatus, ApiError } from '../../services/enquiry.api';
+import { fetchEnquiries, patchEnquiryStatus, createEnquiry, ApiError, CreateEnquiryPayload } from '../../services/enquiry.api';
 import { fetchBookings, patchBookingStatus, createBooking } from '../../services/booking.api';
 import { EnquiryMetrics } from './EnquiryMetrics';
 import { EnquiryFilters } from './EnquiryFilters';
 import { EnquiryTable } from './EnquiryTable';
 import { EnquiryDetailModal } from './EnquiryDetailModal';
 import { BookingsView } from '../bookings/BookingsView';
+import { BusinessProfileSettings } from '../business/BusinessProfileSettings';
+import { CreateEnquiryModal } from './CreateEnquiryModal';
 
 interface EnquiryWorkspaceProps {
   onBackToLanding: () => void;
@@ -46,7 +52,7 @@ export function EnquiryWorkspace({
   onLogout,
 }: EnquiryWorkspaceProps) {
   // Active Tab: Enquiries or Bookings
-  const [activeTab, setActiveTab] = useState<'enquiries' | 'bookings'>('enquiries');
+  const [activeTab, setActiveTab] = useState<'enquiries' | 'bookings' | 'profile'>('enquiries');
 
   // ----------------------------------------------------------------
   // Enquiries Data state
@@ -68,6 +74,8 @@ export function EnquiryWorkspace({
   // Detail modal state
   // ----------------------------------------------------------------
   const [selectedEnquiry, setSelectedEnquiry] = useState<CustomerEnquiry | null>(null);
+  const [isCreateOpen, setIsCreateOpen] = useState(false);
+  const [createSuccessMessage, setCreateSuccessMessage] = useState<string | null>(null);
 
 
   // ----------------------------------------------------------------
@@ -351,6 +359,25 @@ export function EnquiryWorkspace({
     categoryFilter !== 'ALL' ||
     urgencyFilter !== 'ALL';
 
+  const handleCreateEnquiry = useCallback(async (payload: CreateEnquiryPayload) => {
+    try {
+      const created = await createEnquiry(payload);
+      setEnquiries((current) => [created, ...current.filter((e) => e.id !== created.id)]);
+      setDataSource('api');
+      setLoadState('ready');
+      setIsCreateOpen(false);
+      setCreateSuccessMessage(`Enquiry ${created.id} ("${created.serviceTitle}") created successfully.`);
+      // Refresh in background to sync summary metrics and counts with authoritative server state
+      loadEnquiries().catch(() => {});
+      return { success: true, message: `Enquiry ${created.id} created successfully.` };
+    } catch (err) {
+      const message = err instanceof ApiError
+        ? `${err.serverMessage} (HTTP ${err.statusCode})`
+        : err instanceof Error ? err.message : 'Could not create enquiry. Please try again.';
+      return { success: false, message };
+    }
+  }, [loadEnquiries]);
+
   // ----------------------------------------------------------------
   // Render
   // ----------------------------------------------------------------
@@ -454,151 +481,180 @@ export function EnquiryWorkspace({
       </header>
 
       {/* Main Workspace Body */}
-      <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-6" id="workspace-content">
-        {/* Workspace Title & Introduction */}
-        <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 pb-2 border-b border-surface-muted/60">
-          <div className="space-y-1">
+      <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-5 sm:py-6 space-y-4 sm:space-y-5" id="workspace-content">
+        {/* Workspace Title & Introduction Header */}
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-white/10">
+          <div className="space-y-0.5">
             <div className="flex items-center space-x-2">
-              <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-content-primary">
-                {currentUser ? `${currentUser.businessName} Inbox` : 'Enquiry Management'}
+              <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-content-primary">
+                {currentUser ? `${currentUser.businessName} Operations` : 'Enquiry Management'}
               </h1>
-              <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-bold bg-brand-teal-50 text-brand-teal border border-brand-teal-100">
+              <span className="inline-flex items-center px-2 py-0.5 rounded-md text-[11px] font-semibold bg-brand-teal-50 text-brand-teal border border-brand-teal-100">
                 {currentUser ? 'Private Tenant' : 'Public Demo'}
               </span>
             </div>
-            <p className="text-sm text-content-secondary max-w-2xl leading-relaxed">
+            <p className="text-xs text-content-secondary leading-normal max-w-2xl">
               {currentUser
-                ? `Managing enquiries exclusively for ${currentUser.businessName}. Data isolation enforced by business ownership.`
+                ? `Operating inbox for ${currentUser.businessName}. Data isolation enforced by business ownership.`
                 : 'Triage customer enquiries, inspect job requests, and preview AI-assisted proposals across your service verticals.'}
             </p>
           </div>
 
-          <div className="text-xs text-content-muted">
-            {currentUser ? (
-              <span className="font-mono text-[11px] bg-surface-muted px-2 py-1 rounded">
-                Tenant: {currentUser.businessId}
+          {/* Segmented Control for Enquiries vs Bookings */}
+          <div className="flex items-center bg-[#0D1126] p-1 rounded-xl flex-shrink-0 self-start sm:self-auto border border-white/10">
+            <button
+              type="button"
+              onClick={() => setActiveTab('enquiries')}
+              className={`inline-flex items-center space-x-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${
+                activeTab === 'enquiries'
+                  ? 'bg-[#1A224E] text-white shadow-xs'
+                  : 'text-content-secondary hover:text-content-primary'
+              }`}
+              id="tab-enquiries"
+            >
+              <Inbox className="w-3.5 h-3.5 text-brand-teal" />
+              <span>Enquiries</span>
+              <span
+                className={`px-1.5 py-0.2 rounded-full text-[10px] font-bold ${
+                  activeTab === 'enquiries'
+                    ? 'bg-white/10 text-violet-200'
+                    : 'bg-white/10 text-slate-200'
+                }`}
+              >
+                {enquiries.length}
               </span>
-            ) : (
-              <span>ServiceFlow AI • Standalone Workspace View</span>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => setActiveTab('bookings')}
+              className={`inline-flex items-center space-x-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${
+                activeTab === 'bookings'
+                  ? 'bg-[#1A224E] text-white shadow-xs'
+                  : 'text-content-secondary hover:text-content-primary'
+              }`}
+              id="tab-bookings"
+            >
+              <CalendarIcon className="w-3.5 h-3.5 text-brand-teal" />
+              <span>Bookings & Schedule</span>
+              <span
+                className={`px-1.5 py-0.2 rounded-full text-[10px] font-bold ${
+                  activeTab === 'bookings'
+                    ? 'bg-white/10 text-violet-200'
+                    : 'bg-white/10 text-slate-200'
+                }`}
+              >
+                {bookings.length}
+              </span>
+            </button>
+
+            {currentUser?.role === 'owner' && (
+              <button
+                type="button"
+                onClick={() => setActiveTab('profile')}
+                aria-current={activeTab === 'profile' ? 'page' : undefined}
+                className={`inline-flex items-center space-x-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${
+                  activeTab === 'profile'
+                  ? 'bg-[#1A224E] text-white shadow-xs'
+                    : 'text-content-secondary hover:text-content-primary'
+                }`}
+                id="tab-business-profile"
+              >
+                <Settings2 className="w-3.5 h-3.5 text-violet-300" />
+                <span>Business Profile</span>
+              </button>
             )}
           </div>
         </div>
 
-        {/* Tenant Isolation / Public Demo Notification Banner */}
-        {currentUser ? (
-          <div className="p-3.5 rounded-xl bg-emerald-50/80 border border-emerald-200 flex items-center justify-between text-xs text-emerald-800">
+        {/* Compact Demo Notice Banner */}
+        {!currentUser ? (
+          <div className="py-2.5 px-3.5 rounded-xl bg-dark-card border border-white/10 flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 text-xs text-content-secondary shadow-card">
             <div className="flex items-center space-x-2">
-              <UserCheck className="w-4 h-4 text-emerald-600 flex-shrink-0" />
+              <Sparkles className="w-4 h-4 text-brand-teal flex-shrink-0" />
               <span>
-                <strong>Authenticated Business Account:</strong> Logged in as <span className="font-semibold">{currentUser.name}</span> ({currentUser.email}). Enquiries created or updated here are strictly isolated to your business.
-              </span>
-            </div>
-          </div>
-        ) : (
-          <div className="p-4 rounded-xl bg-brand-teal-50/70 border border-brand-teal-100 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs text-brand-teal-900">
-            <div className="flex items-center space-x-2.5">
-              <Sparkles className="w-5 h-5 text-brand-teal flex-shrink-0" />
-              <span>
-                <strong>Public Demo Mode:</strong> Viewing shared demo enquiries. Sign in or create an account to get a private, isolated business workspace.
+                <strong className="text-content-primary font-semibold">Demo Workspace:</strong> Viewing sample enquiries. Sign in or register to manage your own isolated service business.
               </span>
             </div>
             <div className="flex items-center space-x-2 flex-shrink-0">
               <button
                 onClick={() => onOpenAuth?.('login')}
-                className="px-3 py-1.5 rounded-lg bg-surface-card border border-brand-teal-200 text-brand-teal font-semibold hover:bg-brand-teal-50 transition-colors"
+                className="px-2.5 py-1 rounded-md text-xs font-semibold border border-white/10 bg-[#121833] text-slate-100 hover:bg-white/10 transition-colors"
               >
                 Sign In
               </button>
               <button
                 onClick={() => onOpenAuth?.('register')}
-                className="px-3 py-1.5 rounded-lg bg-brand-teal text-white font-semibold hover:bg-brand-teal-light shadow-xs transition-colors"
+                className="px-2.5 py-1 rounded-md text-xs font-semibold bg-brand-teal text-white hover:bg-brand-teal-light transition-colors"
               >
                 Register Business
               </button>
             </div>
           </div>
+        ) : (
+          <div className="py-2 px-3.5 rounded-xl bg-emerald-500/10 border border-emerald-400/20 flex items-center justify-between text-xs text-emerald-200">
+            <div className="flex items-center space-x-2">
+              <UserCheck className="w-4 h-4 text-emerald-300 flex-shrink-0" />
+              <span>
+                <strong>Authenticated:</strong> Logged in as <span className="font-semibold">{currentUser.name}</span> ({currentUser.email}). Enquiries are strictly isolated to <span className="font-semibold">{currentUser.businessName}</span>.
+              </span>
+            </div>
+          </div>
         )}
-        {/* Workspace Tab Switcher */}
-        <div className="flex items-center space-x-2 border-b border-surface-muted pb-3">
-          <button
-            type="button"
-            onClick={() => setActiveTab('enquiries')}
-            className={`inline-flex items-center space-x-2 px-4 py-2.5 rounded-xl text-xs sm:text-sm font-semibold transition-all ${
-              activeTab === 'enquiries'
-                ? 'bg-brand-teal text-white shadow-soft'
-                : 'bg-surface-card text-content-secondary hover:text-content-primary hover:bg-surface-bg border border-surface-muted'
-            }`}
-            id="tab-enquiries"
+        {/* Creation Success Notification Banner */}
+        {createSuccessMessage && (
+          <div
+            role="status"
+            aria-live="polite"
+            className="p-3.5 rounded-xl bg-emerald-500/15 border border-emerald-500/30 text-emerald-300 text-xs flex items-center justify-between shadow-xs animate-fadeIn"
           >
-            <Inbox className="w-4 h-4" />
-            <span>Enquiries</span>
-            <span
-              className={`px-2 py-0.5 rounded-full text-[11px] font-bold ${
-                activeTab === 'enquiries'
-                  ? 'bg-white/20 text-white'
-                  : 'bg-surface-bg text-content-muted'
-              }`}
+            <div className="flex items-center space-x-2">
+              <CheckCircle2 className="w-4 h-4 text-emerald-400 flex-shrink-0" />
+              <span className="font-semibold">{createSuccessMessage}</span>
+            </div>
+            <button
+              type="button"
+              onClick={() => setCreateSuccessMessage(null)}
+              className="p-1 rounded-lg text-emerald-300 hover:text-white hover:bg-emerald-500/20 transition-colors"
+              aria-label="Dismiss message"
             >
-              {enquiries.length}
-            </span>
-          </button>
-
-          <button
-            type="button"
-            onClick={() => setActiveTab('bookings')}
-            className={`inline-flex items-center space-x-2 px-4 py-2.5 rounded-xl text-xs sm:text-sm font-semibold transition-all ${
-              activeTab === 'bookings'
-                ? 'bg-brand-teal text-white shadow-soft'
-                : 'bg-surface-card text-content-secondary hover:text-content-primary hover:bg-surface-bg border border-surface-muted'
-            }`}
-            id="tab-bookings"
-          >
-            <CalendarIcon className="w-4 h-4" />
-            <span>Bookings & Schedule</span>
-            <span
-              className={`px-2 py-0.5 rounded-full text-[11px] font-bold ${
-                activeTab === 'bookings'
-                  ? 'bg-white/20 text-white'
-                  : 'bg-surface-bg text-content-muted'
-              }`}
-            >
-              {bookings.length}
-            </span>
-          </button>
-        </div>
+              <X className="w-3.5 h-3.5" />
+            </button>
+          </div>
+        )}
 
         {/* Tab 1: Enquiries View */}
         {activeTab === 'enquiries' && (
           <>
             {/* ── Loading state ── */}
             {loadState === 'loading' && (
-              <div className="bg-surface-card rounded-2xl border border-surface-muted p-16 text-center flex flex-col items-center space-y-4 shadow-soft">
-                <Loader2 className="w-10 h-10 text-brand-teal animate-spin" />
-                <p className="text-sm font-medium text-content-secondary">
-                  Loading enquiries from API…
+              <div className="bg-dark-card rounded-xl border border-white/10 p-12 text-center flex flex-col items-center space-y-3 shadow-card">
+                <Loader2 className="w-8 h-8 text-brand-teal animate-spin" />
+                <p className="text-xs font-medium text-content-secondary">
+                  Loading customer enquiries…
                 </p>
               </div>
             )}
 
             {/* ── Error state ── */}
             {loadState === 'error' && (
-              <div className="bg-rose-50 border border-rose-200 rounded-2xl p-8 text-center space-y-4 shadow-soft" role="alert">
+              <div className="bg-rose-50 border border-rose-200 rounded-xl p-6 text-center space-y-3 shadow-xs" role="alert">
                 <div className="flex justify-center">
-                  <div className="h-14 w-14 rounded-2xl bg-rose-100 border border-rose-200 flex items-center justify-center">
-                    <AlertTriangle className="w-7 h-7 text-rose-500" />
+                  <div className="h-10 w-10 rounded-xl bg-rose-100 border border-rose-200 flex items-center justify-center">
+                    <AlertTriangle className="w-5 h-5 text-rose-500" />
                   </div>
                 </div>
-                <div className="space-y-1.5 max-w-md mx-auto">
-                  <h3 className="text-base font-bold text-rose-800">Failed to load enquiries</h3>
-                  <p className="text-sm text-rose-700 leading-relaxed font-mono break-words">
+                <div className="space-y-1 max-w-md mx-auto">
+                  <h3 className="text-sm font-bold text-rose-800">Failed to load enquiries</h3>
+                  <p className="text-xs text-rose-700 leading-relaxed font-mono break-words">
                     {loadError}
                   </p>
                 </div>
                 <button
                   onClick={loadEnquiries}
-                  className="inline-flex items-center space-x-2 px-5 py-2.5 rounded-xl bg-rose-600 text-white hover:bg-rose-700 text-sm font-semibold shadow-soft transition-all"
+                  className="inline-flex items-center space-x-1.5 px-3.5 py-1.5 rounded-lg bg-rose-600 text-white hover:bg-rose-700 text-xs font-semibold shadow-xs transition-all"
                 >
-                  <RefreshCw className="w-4 h-4" />
+                  <RefreshCw className="w-3.5 h-3.5" />
                   <span>Retry</span>
                 </button>
               </div>
@@ -611,22 +667,13 @@ export function EnquiryWorkspace({
                 {dataSource === 'demo' && (
                   <div
                     role="status"
-                    className="flex items-start space-x-3 p-4 rounded-xl bg-amber-50 border border-amber-200 text-sm text-amber-800"
+                    className="flex items-start space-x-2.5 p-3 rounded-xl bg-amber-50 border border-amber-200 text-xs text-amber-800"
                   >
-                    <WifiOff className="w-5 h-5 text-amber-500 flex-shrink-0 mt-0.5" />
+                    <WifiOff className="w-4 h-4 text-amber-600 flex-shrink-0 mt-0.5" />
                     <div className="space-y-0.5">
-                      <span className="font-semibold text-amber-900">Server offline — showing demo data</span>
-                      <p className="text-xs leading-relaxed text-amber-700">
-                        The backend API could not be reached. Displaying read-only sample enquiries for
-                        demonstration purposes. Status updates will apply locally only and will not
-                        persist. Start the server and{' '}
-                        <button
-                          onClick={loadEnquiries}
-                          className="underline font-semibold hover:text-amber-900"
-                        >
-                          reload
-                        </button>{' '}
-                        to connect to live data.
+                      <span className="font-semibold text-amber-900">Server offline — viewing sample data</span>
+                      <p className="text-xs text-amber-700 leading-normal">
+                        Could not reach API. Displaying read-only demo enquiries. Updates will apply locally only.
                       </p>
                     </div>
                   </div>
@@ -634,6 +681,19 @@ export function EnquiryWorkspace({
 
                 {/* 1. Summary Metrics Cards */}
                 <EnquiryMetrics enquiries={enquiries} />
+
+                {currentUser && (
+                  <div className="flex justify-end">
+                    <button
+                      type="button"
+                      onClick={() => setIsCreateOpen(true)}
+                      className="inline-flex items-center gap-2 rounded-lg bg-violet-600 px-3.5 py-2 text-sm font-semibold text-white shadow-soft transition-colors hover:bg-violet-500"
+                      id="create-enquiry-btn"
+                    >
+                      <Plus className="h-4 w-4" /> Create Enquiry
+                    </button>
+                  </div>
+                )}
 
                 {/* 2. Filter Toolbar */}
                 <EnquiryFilters
@@ -656,6 +716,7 @@ export function EnquiryWorkspace({
                   onSelectEnquiry={setSelectedEnquiry}
                   onResetFilters={handleResetFilters}
                   hasFilters={hasActiveFilters}
+                  onCreateEnquiry={currentUser ? () => setIsCreateOpen(true) : undefined}
                 />
               </>
             )}
@@ -674,23 +735,27 @@ export function EnquiryWorkspace({
             dataSource={dataSource}
           />
         )}
+
+        {activeTab === 'profile' && currentUser?.role === 'owner' && (
+          <BusinessProfileSettings currentUser={currentUser} />
+        )}
       </main>
 
-      {/* Workspace Sub-Footer */}
-      <footer className="border-t border-surface-muted bg-surface-card py-4 text-xs text-content-secondary mt-auto">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col sm:flex-row items-center justify-between gap-3">
-          <div className="flex items-center space-x-3">
-            <span>© {new Date().getFullYear()} ServiceFlow AI.</span>
+      {/* Workspace Sub-Footer with Built by Samatha Reddy Credit */}
+      <footer className="border-t border-white/10 bg-[#0D1126] py-3.5 text-xs text-slate-300 mt-auto">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col sm:flex-row items-center justify-between gap-2.5">
+          <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-slate-300">
+            <span>© {new Date().getFullYear()} ServiceFlow AI</span>
             <span>•</span>
-            <span className="text-content-muted">
-              Booking Management & Service Scheduling
-            </span>
+            <span>Less Admin. Better Business.</span>
+            <span>•</span>
+            <span className="font-medium text-slate-100">Built by Samatha Reddy</span>
           </div>
 
           <div className="flex items-center space-x-4">
             <button
               onClick={onOpenDiagnostics}
-              className="inline-flex items-center space-x-1.5 text-content-muted hover:text-brand-teal transition-colors"
+              className="inline-flex items-center space-x-1.5 text-content-secondary hover:text-brand-teal transition-colors"
               title="System Diagnostics"
             >
               <span
@@ -714,6 +779,15 @@ export function EnquiryWorkspace({
           </div>
         </div>
       </footer>
+
+      {isCreateOpen && currentUser && (
+        <CreateEnquiryModal
+          isOpen={isCreateOpen}
+          onClose={() => setIsCreateOpen(false)}
+          onCreate={handleCreateEnquiry}
+          businessName={currentUser.businessName}
+        />
+      )}
 
       {/* Detail Modal */}
       <EnquiryDetailModal

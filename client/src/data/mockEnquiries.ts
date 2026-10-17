@@ -10,17 +10,17 @@ import { CustomerEnquiry } from '../types';
 export const DEMO_ENQUIRIES: CustomerEnquiry[] = [
   {
     id: 'ENQ-1042',
-    customerName: 'Sarah Jenkins',
-    serviceCategory: 'Outdoor & Property',
-    serviceTitle: 'Lawn Mowing & Boundary Hedge Trimming',
-    location: 'Westfield Crescent, Oakridge',
+    customerName: 'Emma Vance',
+    serviceCategory: 'Home Maintenance',
+    serviceTitle: 'Electrical Panel & Safety Inspection',
+    location: '42 Elmwood Terrace',
     receivedTime: '24m ago',
     status: 'Awaiting Review',
     urgency: 'Standard',
     message:
-      'Looking for regular bi-weekly garden maintenance. Front lawn plus trimming overgrown laurel hedges along boundary fence.',
+      'Need a certified safety audit of our main electrical distribution board and surge protection before home office renovation starts.',
     suggestedReply:
-      'Hi Sarah, thanks for contacting GreenThumb! We would be happy to take on your bi-weekly lawn and hedge maintenance. Based on typical garden sizes on Westfield Crescent, our rate is £65 per visit including green waste disposal. Would Tuesday at 09:30 AM suit you for an initial visit?',
+      'Hi Emma, thanks for reaching out to BrightPath Home Services! We can conduct a full electrical distribution audit and surge inspection. Our standard diagnostic visit is $120 including a comprehensive safety certificate. Would Tuesday at 09:30 AM suit you for our technician to visit?',
   },
   {
     id: 'ENQ-1041',

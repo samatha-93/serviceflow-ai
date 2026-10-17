@@ -4,6 +4,7 @@ import bcrypt from 'bcryptjs';
 import { UserModel, UserDocument, toUserProfile } from '../models/user.model';
 import { RegisterDTO, UserProfile } from '../types/auth.types';
 import { DatabaseUnavailableError } from './enquiry.repository';
+import { businessProfileRepository } from './businessProfile.repository';
 
 export class UserRepository {
   /**
@@ -73,6 +74,17 @@ export class UserRepository {
       businessId,
       role: 'owner',
     });
+
+    // Initialize business profile for the newly registered business
+    try {
+      await businessProfileRepository.createInitialProfile(
+        businessId,
+        dto.businessName,
+        normalizedEmail
+      );
+    } catch (profileError) {
+      console.warn('[UserRepository] Warning: Could not initialize business profile:', profileError);
+    }
 
     return toUserProfile(createdDoc);
   }

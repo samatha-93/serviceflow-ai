@@ -85,15 +85,15 @@ export function BookingsView({
   const getStatusBadge = (status: BookingStatus) => {
     switch (status) {
       case 'Confirmed':
-        return 'bg-emerald-50 text-emerald-700 border-emerald-200';
+        return 'bg-emerald-500/15 text-emerald-300 border-emerald-500/30';
       case 'Pending':
-        return 'bg-amber-50 text-amber-700 border-amber-200';
+        return 'bg-amber-500/15 text-amber-300 border-amber-500/30';
       case 'Completed':
-        return 'bg-blue-50 text-blue-700 border-blue-200';
+        return 'bg-blue-500/15 text-blue-300 border-blue-500/30';
       case 'Cancelled':
-        return 'bg-rose-50 text-rose-700 border-rose-200';
+        return 'bg-rose-500/15 text-rose-300 border-rose-500/30';
       default:
-        return 'bg-surface-bg text-content-secondary border-surface-muted';
+        return 'bg-white/5 text-slate-300 border-white/10';
     }
   };
 
@@ -101,40 +101,40 @@ export function BookingsView({
     <div className="space-y-6">
       {/* 1. Metrics Cards */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
-        <div className="bg-surface-card p-4 rounded-2xl border border-surface-muted shadow-soft">
-          <div className="flex items-center justify-between text-xs text-content-secondary mb-1">
-            <span className="font-semibold uppercase tracking-wider text-[10px]">Total Bookings</span>
-            <Calendar className="w-4 h-4 text-brand-teal" />
+        <div className="bg-[#0D1126] p-4 rounded-xl border border-white/10 shadow-soft">
+          <div className="flex items-center justify-between text-xs text-slate-400 mb-1">
+            <span className="font-semibold uppercase tracking-wider text-[11px]">Total Bookings</span>
+            <Calendar className="w-4 h-4 text-violet-400" />
           </div>
-          <div className="text-2xl font-black text-content-primary">{metrics.total}</div>
-          <div className="text-[11px] text-content-muted mt-0.5">Scheduled services</div>
+          <div className="text-2xl font-bold text-white">{metrics.total}</div>
+          <div className="text-[11px] text-slate-400 mt-0.5">Scheduled services</div>
         </div>
 
-        <div className="bg-surface-card p-4 rounded-2xl border border-surface-muted shadow-soft">
-          <div className="flex items-center justify-between text-xs text-emerald-700 mb-1">
-            <span className="font-semibold uppercase tracking-wider text-[10px]">Confirmed</span>
-            <CheckCircle2 className="w-4 h-4 text-emerald-600" />
+        <div className="bg-[#0D1126] p-4 rounded-xl border border-white/10 shadow-soft">
+          <div className="flex items-center justify-between text-xs text-emerald-400 mb-1">
+            <span className="font-semibold uppercase tracking-wider text-[11px]">Confirmed</span>
+            <CheckCircle2 className="w-4 h-4 text-emerald-400" />
           </div>
-          <div className="text-2xl font-black text-emerald-800">{metrics.confirmed}</div>
-          <div className="text-[11px] text-emerald-700 mt-0.5">Ready for service</div>
+          <div className="text-2xl font-bold text-emerald-400">{metrics.confirmed}</div>
+          <div className="text-[11px] text-emerald-400/80 mt-0.5">Ready for service</div>
         </div>
 
-        <div className="bg-surface-card p-4 rounded-2xl border border-surface-muted shadow-soft">
-          <div className="flex items-center justify-between text-xs text-amber-700 mb-1">
-            <span className="font-semibold uppercase tracking-wider text-[10px]">Pending</span>
-            <Clock className="w-4 h-4 text-amber-600" />
+        <div className="bg-[#0D1126] p-4 rounded-xl border border-white/10 shadow-soft">
+          <div className="flex items-center justify-between text-xs text-amber-400 mb-1">
+            <span className="font-semibold uppercase tracking-wider text-[11px]">Pending</span>
+            <Clock className="w-4 h-4 text-amber-400" />
           </div>
-          <div className="text-2xl font-black text-amber-800">{metrics.pending}</div>
-          <div className="text-[11px] text-amber-700 mt-0.5">Awaiting confirmation</div>
+          <div className="text-2xl font-bold text-amber-400">{metrics.pending}</div>
+          <div className="text-[11px] text-amber-400/80 mt-0.5">Awaiting confirmation</div>
         </div>
 
-        <div className="bg-surface-card p-4 rounded-2xl border border-surface-muted shadow-soft">
-          <div className="flex items-center justify-between text-xs text-blue-700 mb-1">
-            <span className="font-semibold uppercase tracking-wider text-[10px]">Completed</span>
-            <CheckCircle2 className="w-4 h-4 text-blue-600" />
+        <div className="bg-[#0D1126] p-4 rounded-xl border border-white/10 shadow-soft">
+          <div className="flex items-center justify-between text-xs text-blue-400 mb-1">
+            <span className="font-semibold uppercase tracking-wider text-[11px]">Completed</span>
+            <CheckCircle2 className="w-4 h-4 text-blue-400" />
           </div>
-          <div className="text-2xl font-black text-blue-800">{metrics.completed}</div>
-          <div className="text-[11px] text-blue-700 mt-0.5">Jobs fulfilled</div>
+          <div className="text-2xl font-bold text-blue-400">{metrics.completed}</div>
+          <div className="text-[11px] text-blue-400/80 mt-0.5">Jobs fulfilled</div>
         </div>
       </div>
 
@@ -144,21 +144,21 @@ export function BookingsView({
           role="status"
           className={`p-3.5 rounded-xl text-xs flex items-center justify-between shadow-xs border ${
             feedback.ok
-              ? 'bg-emerald-50 border-emerald-200 text-emerald-800'
-              : 'bg-rose-50 border-rose-200 text-rose-800'
+              ? 'bg-emerald-500/15 border-emerald-500/30 text-emerald-300'
+              : 'bg-rose-500/15 border-rose-500/30 text-rose-300'
           }`}
         >
           <div className="flex items-center space-x-2">
             {feedback.ok ? (
-              <CheckCircle2 className="w-4 h-4 text-emerald-600 flex-shrink-0" />
+              <CheckCircle2 className="w-4 h-4 text-emerald-400 flex-shrink-0" />
             ) : (
-              <AlertCircle className="w-4 h-4 text-rose-600 flex-shrink-0" />
+              <AlertCircle className="w-4 h-4 text-rose-400 flex-shrink-0" />
             )}
             <span className="font-semibold">{feedback.text}</span>
           </div>
           <button
             onClick={() => setFeedback(null)}
-            className="text-xs font-semibold hover:underline"
+            className="text-xs font-semibold hover:underline text-slate-300 hover:text-white"
           >
             Dismiss
           </button>
@@ -167,26 +167,26 @@ export function BookingsView({
 
       {/* Demo Notice */}
       {dataSource === 'demo' && (
-        <div className="p-3.5 rounded-xl bg-amber-50 border border-amber-200 text-amber-800 text-xs flex items-center space-x-2.5">
-          <WifiOff className="w-4 h-4 text-amber-600 flex-shrink-0" />
+        <div className="p-3.5 rounded-xl bg-amber-500/15 border border-amber-500/30 text-amber-300 text-xs flex items-center space-x-2.5">
+          <WifiOff className="w-4 h-4 text-amber-400 flex-shrink-0" />
           <div>
-            <span className="font-semibold">Demo Mode: </span>
+            <span className="font-semibold text-white">Demo Mode: </span>
             <span>Displaying read-only demo bookings. Start the server and ensure MongoDB is reachable for persistent booking mutations.</span>
           </div>
         </div>
       )}
 
       {/* 2. Filter Toolbar */}
-      <div className="bg-surface-card p-4 rounded-2xl border border-surface-muted shadow-soft flex flex-col md:flex-row items-stretch md:items-center justify-between gap-3">
+      <div className="bg-[#0D1126] p-3.5 sm:p-4 rounded-xl border border-white/10 shadow-soft flex flex-col md:flex-row items-stretch md:items-center justify-between gap-3">
         {/* Search Input */}
         <div className="relative flex-1">
-          <Search className="w-4 h-4 text-content-muted absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+          <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
           <input
             type="text"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             placeholder="Search by customer, service, location, or ID..."
-            className="w-full pl-9 pr-4 py-2 rounded-xl text-xs sm:text-sm bg-surface-bg border border-surface-muted text-content-primary placeholder:text-content-muted focus:outline-none focus:ring-2 focus:ring-brand-teal/20 focus:border-brand-teal transition-all"
+            className="w-full pl-9 pr-4 py-2 rounded-lg text-xs sm:text-sm bg-[#070913] border border-white/10 text-white placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-violet-500/20 focus:border-violet-500 transition-all"
             id="bookings-search-input"
           />
         </div>
@@ -199,10 +199,10 @@ export function BookingsView({
               <button
                 key={filter.value}
                 onClick={() => setStatusFilter(filter.value)}
-                className={`px-3 py-1.5 rounded-xl text-xs font-semibold border transition-all ${
+                className={`px-3 py-1.5 rounded-lg text-xs font-medium border transition-all ${
                   isSelected
-                    ? 'bg-brand-teal text-white border-brand-teal shadow-xs'
-                    : 'bg-surface-bg text-content-secondary border-surface-muted hover:border-brand-teal/30 hover:text-content-primary'
+                    ? 'bg-violet-600/30 text-violet-300 border-violet-500/40 shadow-xs'
+                    : 'bg-[#070913] text-slate-400 border-white/10 hover:border-violet-500/30 hover:text-white'
                 }`}
               >
                 {filter.label}
@@ -216,7 +216,7 @@ export function BookingsView({
                 setSearchQuery('');
                 setStatusFilter('ALL');
               }}
-              className="p-1.5 rounded-xl text-content-muted hover:text-brand-teal hover:bg-surface-bg border border-transparent hover:border-surface-muted transition-all"
+              className="p-1.5 rounded-lg text-slate-400 hover:text-violet-400 hover:bg-white/5 border border-transparent hover:border-white/10 transition-all"
               title="Reset Filters"
             >
               <RotateCcw className="w-4 h-4" />
@@ -227,29 +227,29 @@ export function BookingsView({
 
       {/* 3. Content State (Loading / Error / Empty / List) */}
       {loading ? (
-        <div className="p-12 text-center bg-surface-card rounded-2xl border border-surface-muted space-y-3">
-          <Loader2 className="w-8 h-8 text-brand-teal animate-spin mx-auto" />
-          <p className="text-xs text-content-secondary font-medium">Loading field bookings...</p>
+        <div className="p-12 text-center bg-[#0D1126] rounded-2xl border border-white/10 space-y-3">
+          <Loader2 className="w-8 h-8 text-violet-400 animate-spin mx-auto" />
+          <p className="text-xs text-slate-400 font-medium">Loading field bookings...</p>
         </div>
       ) : error ? (
-        <div className="p-8 text-center bg-rose-50 rounded-2xl border border-rose-200 space-y-3">
-          <AlertCircle className="w-8 h-8 text-rose-600 mx-auto" />
-          <h4 className="text-sm font-bold text-rose-900">Failed to load bookings</h4>
-          <p className="text-xs text-rose-700 max-w-md mx-auto">{error}</p>
+        <div className="p-8 text-center bg-rose-500/15 rounded-2xl border border-rose-500/30 space-y-3">
+          <AlertCircle className="w-8 h-8 text-rose-400 mx-auto" />
+          <h4 className="text-sm font-bold text-white">Failed to load bookings</h4>
+          <p className="text-xs text-rose-300 max-w-md mx-auto">{error}</p>
           <button
             onClick={onRefresh}
-            className="px-4 py-2 rounded-xl bg-rose-600 text-white font-semibold text-xs hover:bg-rose-700 transition-colors shadow-xs"
+            className="px-4 py-2 rounded-xl bg-rose-600 text-white font-semibold text-xs hover:bg-rose-500 transition-colors shadow-xs"
           >
             Retry
           </button>
         </div>
       ) : filteredBookings.length === 0 ? (
-        <div className="p-12 text-center bg-surface-card rounded-2xl border border-surface-muted space-y-3">
-          <div className="w-12 h-12 rounded-2xl bg-surface-bg border border-surface-muted flex items-center justify-center mx-auto text-content-muted">
+        <div className="p-12 text-center bg-[#0D1126] rounded-2xl border border-white/10 space-y-3">
+          <div className="w-12 h-12 rounded-2xl bg-[#070913] border border-white/10 flex items-center justify-center mx-auto text-slate-500">
             <Calendar className="w-6 h-6" />
           </div>
-          <h4 className="text-sm font-bold text-content-primary">No bookings found</h4>
-          <p className="text-xs text-content-secondary max-w-sm mx-auto">
+          <h4 className="text-sm font-bold text-white">No bookings found</h4>
+          <p className="text-xs text-slate-400 max-w-sm mx-auto">
             {bookings.length === 0
               ? 'No bookings currently scheduled. Open any customer enquiry and click "Convert to Booking" to schedule your first service job!'
               : 'No bookings match your selected filter criteria. Try resetting your search filters.'}
@@ -260,7 +260,7 @@ export function BookingsView({
                 setSearchQuery('');
                 setStatusFilter('ALL');
               }}
-              className="text-xs font-semibold text-brand-teal hover:underline"
+              className="text-xs font-semibold text-violet-400 hover:underline"
             >
               Clear filters
             </button>
@@ -273,39 +273,39 @@ export function BookingsView({
             return (
               <div
                 key={booking.id}
-                className="bg-surface-card p-4 sm:p-5 rounded-2xl border border-surface-muted hover:border-brand-teal/40 transition-all shadow-card space-y-3"
+                className="bg-[#0D1126] p-4 sm:p-5 rounded-xl border border-white/10 hover:border-violet-500/40 transition-all shadow-card space-y-3"
               >
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-2 border-b border-surface-muted/60">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-2.5 border-b border-white/10">
                   <div className="flex items-center space-x-2.5">
-                    <span className="font-mono text-xs font-bold text-brand-teal px-2 py-0.5 rounded-md bg-brand-teal-50 border border-brand-teal-100">
+                    <span className="font-mono text-xs font-bold text-violet-300 px-2 py-0.5 rounded-md bg-violet-500/15 border border-violet-500/30">
                       {booking.id}
                     </span>
                     <span
-                      className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold border ${getStatusBadge(
+                      className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium border ${getStatusBadge(
                         booking.status
                       )}`}
                     >
                       {booking.status}
                     </span>
                     {booking.enquiryId && (
-                      <span className="inline-flex items-center space-x-1 text-[11px] text-content-muted bg-surface-bg px-2 py-0.5 rounded border border-surface-muted">
-                        <Tag className="w-3 h-3 text-brand-teal" />
+                      <span className="inline-flex items-center space-x-1 text-[11px] text-slate-300 bg-[#070913] px-2 py-0.5 rounded border border-white/10">
+                        <Tag className="w-3 h-3 text-violet-400" />
                         <span>Enquiry: {booking.enquiryId}</span>
                       </span>
                     )}
                   </div>
 
-                  <div className="flex items-center space-x-3 text-xs text-content-secondary font-medium">
+                  <div className="flex items-center space-x-3 text-xs text-slate-300 font-medium">
                     <span className="flex items-center space-x-1">
-                      <Calendar className="w-3.5 h-3.5 text-brand-teal" />
+                      <Calendar className="w-3.5 h-3.5 text-violet-400" />
                       <span>{booking.bookingDate}</span>
                     </span>
                     <span className="flex items-center space-x-1">
-                      <Clock className="w-3.5 h-3.5 text-brand-teal" />
+                      <Clock className="w-3.5 h-3.5 text-violet-400" />
                       <span>{booking.bookingTime}</span>
                     </span>
                     {booking.duration && (
-                      <span className="text-[11px] text-content-muted">
+                      <span className="text-[11px] text-slate-400">
                         ({booking.duration})
                       </span>
                     )}
@@ -314,26 +314,26 @@ export function BookingsView({
 
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-3 text-xs">
                   <div>
-                    <span className="text-[10px] uppercase font-bold tracking-wider text-content-muted block mb-0.5">
+                    <span className="text-[11px] uppercase font-bold tracking-wider text-slate-400 block mb-0.5">
                       Customer & Service
                     </span>
-                    <div className="font-bold text-content-primary text-sm">
+                    <div className="font-bold text-white text-sm">
                       {booking.customerName}
                     </div>
-                    <div className="text-content-secondary">{booking.serviceTitle}</div>
+                    <div className="text-slate-300 mt-0.5">{booking.serviceTitle}</div>
                   </div>
 
                   <div>
-                    <span className="text-[10px] uppercase font-bold tracking-wider text-content-muted block mb-0.5">
+                    <span className="text-[11px] uppercase font-bold tracking-wider text-slate-400 block mb-0.5">
                       Service Location
                     </span>
-                    <div className="flex items-start space-x-1 text-content-primary">
-                      <MapPin className="w-3.5 h-3.5 text-brand-teal flex-shrink-0 mt-0.5" />
+                    <div className="flex items-start space-x-1.5 text-slate-200">
+                      <MapPin className="w-3.5 h-3.5 text-violet-400 flex-shrink-0 mt-0.5" />
                       <span>{booking.location}</span>
                     </div>
                     {booking.assignee && (
-                      <div className="flex items-center space-x-1 text-content-muted mt-1">
-                        <User className="w-3 h-3" />
+                      <div className="flex items-center space-x-1 text-slate-400 mt-1">
+                        <User className="w-3 h-3 text-violet-400" />
                         <span>Assigned to: {booking.assignee}</span>
                       </div>
                     )}
@@ -341,17 +341,17 @@ export function BookingsView({
 
                   <div className="flex flex-col justify-between">
                     <div>
-                      <span className="text-[10px] uppercase font-bold tracking-wider text-content-muted block mb-0.5">
+                      <span className="text-[11px] uppercase font-bold tracking-wider text-slate-400 block mb-0.5">
                         Notes
                       </span>
-                      <p className="text-content-secondary line-clamp-2 italic">
+                      <p className="text-slate-300 italic leading-relaxed">
                         {booking.notes ? `"${booking.notes}"` : 'No additional notes provided.'}
                       </p>
                     </div>
 
                     {/* Status Mutation Controls */}
-                    <div className="pt-2 flex items-center justify-end space-x-1.5">
-                      <span className="text-[10px] text-content-muted mr-1">Update Status:</span>
+                    <div className="pt-2.5 flex items-center justify-end space-x-1.5">
+                      <span className="text-[11px] text-slate-400 mr-1">Update Status:</span>
                       {(['Pending', 'Confirmed', 'Completed', 'Cancelled'] as BookingStatus[]).map(
                         (statusOption) => {
                           const isCurrent = booking.status === statusOption;
@@ -361,12 +361,12 @@ export function BookingsView({
                               type="button"
                               onClick={() => handleStatusChange(booking.id, statusOption)}
                               disabled={isCurrent || isUpdating}
-                              className={`px-2 py-1 rounded-lg text-[10px] font-semibold border transition-all ${
+                              className={`px-2.5 py-1 rounded-lg text-[11px] font-medium border transition-all ${
                                 isCurrent
-                                  ? 'bg-surface-bg border-surface-muted text-content-muted cursor-default'
+                                  ? 'bg-[#070913] border-violet-500/40 text-violet-300 cursor-default font-semibold'
                                   : isUpdating
-                                  ? 'opacity-40 cursor-not-allowed bg-surface-bg border-surface-muted'
-                                  : 'bg-white border-surface-muted hover:border-brand-teal/40 hover:bg-surface-bg text-content-secondary hover:text-content-primary shadow-xs'
+                                  ? 'opacity-40 cursor-not-allowed bg-[#070913] border-white/5 text-slate-500'
+                                  : 'bg-[#121838] border-white/10 hover:border-violet-500/40 hover:bg-[#1A224E] text-slate-300 hover:text-white shadow-2xs'
                               }`}
                             >
                               {statusOption}

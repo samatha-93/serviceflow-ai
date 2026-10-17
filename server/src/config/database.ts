@@ -1,6 +1,6 @@
 import mongoose from 'mongoose';
 import { config } from './env';
-import { seedDemoEnquiries, seedDemoBookings } from '../data/seed';
+import { seedDemoEnquiries, seedDemoBookings, seedDemoBusinessProfile } from '../data/seed';
 
 export type DatabaseStatus = 'connected' | 'connecting' | 'disconnected' | 'offline_mode';
 
@@ -30,6 +30,7 @@ export async function connectDatabase(): Promise<void> {
     console.log(`[Database] Successfully connected to MongoDB: ${mongoose.connection.name}`);
     await seedDemoEnquiries();
     await seedDemoBookings();
+    await seedDemoBusinessProfile();
   } catch (error) {
 
     const message = error instanceof Error ? error.message : 'Unknown error';

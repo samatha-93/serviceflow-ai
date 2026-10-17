@@ -35,15 +35,15 @@ export function EnquiryFilters({
     urgencyFilter !== 'ALL';
 
   return (
-    <div className="bg-surface-card rounded-2xl border border-surface-muted p-4 sm:p-5 shadow-soft space-y-4">
-      {/* Top Filter Bar */}
-      <div className="flex flex-col lg:flex-row gap-3 items-stretch lg:items-center justify-between">
-        {/* Search Input */}
-        <div className="relative flex-1 min-w-[260px]">
+    <div className="bg-dark-card rounded-xl border border-white/10 p-3 shadow-card space-y-2.5">
+      {/* Primary Integrated Toolbar */}
+      <div className="flex flex-col md:flex-row gap-2.5 items-stretch md:items-center justify-between">
+        {/* Search Input Field */}
+        <div className="relative flex-1 min-w-[220px]">
           <label htmlFor="enquiry-search-input" className="sr-only">
-            Search enquiries by customer, service or location
+            Search enquiries by customer, service, or location
           </label>
-          <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-content-muted">
+          <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-content-secondary">
             <Search className="w-4 h-4" aria-hidden="true" />
           </div>
           <input
@@ -51,24 +51,24 @@ export function EnquiryFilters({
             type="search"
             value={searchQuery}
             onChange={(e) => onSearchChange(e.target.value)}
-            placeholder="Search by customer, service, location, or notes..."
-            className="w-full pl-10 pr-9 py-2.5 bg-surface-bg border border-surface-muted rounded-xl text-sm text-content-primary placeholder-content-muted focus:bg-white focus:border-brand-teal focus:outline-none focus:ring-2 focus:ring-brand-teal/20 transition-all"
+            placeholder="Search by customer, service, location..."
+            className="w-full pl-9 pr-8 py-2 bg-[#070913] border border-white/10 rounded-lg text-sm text-white placeholder:text-slate-400 focus:bg-[#0D1126] focus:border-brand-teal focus:outline-none focus:ring-1 focus:ring-brand-teal transition-all"
           />
           {searchQuery && (
             <button
               onClick={() => onSearchChange('')}
-              className="absolute inset-y-0 right-0 pr-3 flex items-center text-content-muted hover:text-content-primary transition-colors"
+              className="absolute inset-y-0 right-0 pr-2.5 flex items-center text-content-secondary hover:text-content-primary transition-colors"
               aria-label="Clear search query"
             >
-              <X className="w-4 h-4" />
+              <X className="w-3.5 h-3.5" />
             </button>
           )}
         </div>
 
-        {/* Filter Dropdowns Grid */}
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
+        {/* Filter Controls Row */}
+        <div className="flex flex-wrap sm:flex-nowrap items-center gap-2">
           {/* Status Select */}
-          <div className="flex flex-col">
+          <div className="flex-1 sm:flex-initial">
             <label htmlFor="status-filter-select" className="sr-only">
               Filter by status
             </label>
@@ -76,7 +76,7 @@ export function EnquiryFilters({
               id="status-filter-select"
               value={statusFilter}
               onChange={(e) => onStatusChange(e.target.value)}
-              className="w-full py-2.5 px-3 bg-surface-bg border border-surface-muted rounded-xl text-sm text-content-primary font-medium focus:bg-white focus:border-brand-teal focus:outline-none focus:ring-2 focus:ring-brand-teal/20 transition-all cursor-pointer"
+              className="w-full sm:w-auto py-2 px-2.5 bg-[#070913] border border-white/10 rounded-lg text-xs font-medium text-slate-100 focus:bg-[#0D1126] focus:border-brand-teal focus:outline-none focus:ring-1 focus:ring-brand-teal transition-all cursor-pointer"
             >
               <option value="ALL">All Statuses</option>
               {ENQUIRY_STATUSES.map((status) => (
@@ -88,7 +88,7 @@ export function EnquiryFilters({
           </div>
 
           {/* Service Category Select */}
-          <div className="flex flex-col">
+          <div className="flex-1 sm:flex-initial">
             <label htmlFor="category-filter-select" className="sr-only">
               Filter by service category
             </label>
@@ -96,7 +96,7 @@ export function EnquiryFilters({
               id="category-filter-select"
               value={categoryFilter}
               onChange={(e) => onCategoryChange(e.target.value)}
-              className="w-full py-2.5 px-3 bg-surface-bg border border-surface-muted rounded-xl text-sm text-content-primary font-medium focus:bg-white focus:border-brand-teal focus:outline-none focus:ring-2 focus:ring-brand-teal/20 transition-all cursor-pointer"
+              className="w-full sm:w-auto py-2 px-2.5 bg-[#070913] border border-white/10 rounded-lg text-xs font-medium text-slate-100 focus:bg-[#0D1126] focus:border-brand-teal focus:outline-none focus:ring-1 focus:ring-brand-teal transition-all cursor-pointer"
             >
               <option value="ALL">All Categories</option>
               {SERVICE_CATEGORIES.map((cat) => (
@@ -108,7 +108,7 @@ export function EnquiryFilters({
           </div>
 
           {/* Urgency Select */}
-          <div className="flex flex-col">
+          <div className="flex-1 sm:flex-initial">
             <label htmlFor="urgency-filter-select" className="sr-only">
               Filter by urgency
             </label>
@@ -116,7 +116,7 @@ export function EnquiryFilters({
               id="urgency-filter-select"
               value={urgencyFilter}
               onChange={(e) => onUrgencyChange(e.target.value)}
-              className="w-full py-2.5 px-3 bg-surface-bg border border-surface-muted rounded-xl text-sm text-content-primary font-medium focus:bg-white focus:border-brand-teal focus:outline-none focus:ring-2 focus:ring-brand-teal/20 transition-all cursor-pointer"
+              className="w-full sm:w-auto py-2 px-2.5 bg-[#070913] border border-white/10 rounded-lg text-xs font-medium text-slate-100 focus:bg-[#0D1126] focus:border-brand-teal focus:outline-none focus:ring-1 focus:ring-brand-teal transition-all cursor-pointer"
             >
               <option value="ALL">All Urgencies</option>
               {URGENCY_LEVELS.map((level) => (
@@ -126,30 +126,43 @@ export function EnquiryFilters({
               ))}
             </select>
           </div>
+
+          {/* Reset Filters Action button */}
+          {hasActiveFilters && (
+            <button
+              onClick={onResetFilters}
+              className="inline-flex items-center space-x-1 px-2.5 py-2 rounded-lg text-xs font-semibold text-content-secondary hover:text-brand-teal hover:bg-brand-teal-50 border border-transparent hover:border-brand-teal-100 transition-colors whitespace-nowrap"
+              id="reset-filters-btn"
+              title="Reset all active filters"
+            >
+              <RotateCcw className="w-3.5 h-3.5" />
+              <span className="hidden sm:inline">Reset</span>
+            </button>
+          )}
         </div>
       </div>
 
-      {/* Filter Status & Reset Strip */}
-      <div className="flex flex-wrap items-center justify-between text-xs text-content-secondary pt-1 border-t border-surface-muted gap-2">
-        <div className="flex items-center space-x-2">
-          <Filter className="w-3.5 h-3.5 text-brand-teal" aria-hidden="true" />
+      {/* Filter Counts & Active Filter Context Strip */}
+      <div className="flex items-center justify-between text-xs text-content-secondary px-0.5 pt-1 border-t border-white/10">
+        <div className="flex items-center space-x-1.5">
+          <Filter className="w-3 h-3 text-brand-teal" aria-hidden="true" />
           <span>
-            Showing <strong className="text-content-primary">{filteredCount}</strong> of{' '}
-            <strong>{totalCount}</strong> enquiries
+            Showing <strong className="text-content-primary font-semibold">{filteredCount}</strong> of{' '}
+            <strong className="text-content-primary font-semibold">{totalCount}</strong> enquiries
           </span>
           {hasActiveFilters && (
-            <span className="text-brand-teal font-medium">(Filtered)</span>
+            <span className="inline-flex items-center px-1.5 py-0.2 rounded text-[10px] font-semibold bg-brand-teal-50 text-brand-teal border border-brand-teal-100">
+              Filtered
+            </span>
           )}
         </div>
 
         {hasActiveFilters && (
           <button
             onClick={onResetFilters}
-            className="inline-flex items-center space-x-1.5 px-2.5 py-1 rounded-lg text-content-secondary hover:text-content-primary hover:bg-surface-bg transition-colors font-medium"
-            id="reset-filters-btn"
+            className="text-xs text-brand-teal hover:underline font-medium sm:hidden"
           >
-            <RotateCcw className="w-3.5 h-3.5" />
-            <span>Reset filters</span>
+            Clear all
           </button>
         )}
       </div>

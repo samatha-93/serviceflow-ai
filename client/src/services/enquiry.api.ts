@@ -81,12 +81,7 @@ export interface CreateEnquiryPayload {
 }
 
 function getAuthHeaders(): Record<string, string> {
-  const headers: Record<string, string> = { 'Content-Type': 'application/json' };
-  const token = localStorage.getItem('serviceflow_token');
-  if (token) {
-    headers['Authorization'] = `Bearer ${token}`;
-  }
-  return headers;
+  return { 'Content-Type': 'application/json' };
 }
 
 // -------------------------------------------------------------------

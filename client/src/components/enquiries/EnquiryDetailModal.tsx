@@ -102,30 +102,30 @@ export function EnquiryDetailModal({
   const getStatusBadge = (status: CustomerEnquiry['status']) => {
     switch (status) {
       case 'High Priority':
-        return 'bg-rose-50 text-rose-700 border-rose-200';
+        return 'bg-rose-500/20 text-rose-300 border-rose-500/30';
       case 'Awaiting Review':
-        return 'bg-amber-50 text-amber-700 border-amber-200';
+        return 'bg-amber-500/20 text-amber-300 border-amber-500/30';
       case 'Quoted':
-        return 'bg-blue-50 text-blue-700 border-blue-200';
+        return 'bg-sky-500/20 text-sky-300 border-sky-500/30';
       case 'Booked':
-        return 'bg-emerald-50 text-emerald-700 border-emerald-200';
+        return 'bg-emerald-500/20 text-emerald-300 border-emerald-500/30';
       default:
-        return 'bg-surface-bg text-content-secondary border-surface-muted';
+        return 'bg-white/5 text-slate-300 border-white/10';
     }
   };
 
   const getStatusActiveStyle = (status: CustomerEnquiry['status']) => {
     switch (status) {
       case 'High Priority':
-        return 'bg-rose-100 text-rose-800 border-rose-300 ring-2 ring-rose-400/30';
+        return 'bg-rose-500/25 text-rose-200 border-rose-400 ring-2 ring-rose-500/40';
       case 'Awaiting Review':
-        return 'bg-amber-100 text-amber-800 border-amber-300 ring-2 ring-amber-400/30';
+        return 'bg-amber-500/25 text-amber-200 border-amber-400 ring-2 ring-amber-500/40';
       case 'Quoted':
-        return 'bg-blue-100 text-blue-800 border-blue-300 ring-2 ring-blue-400/30';
+        return 'bg-sky-500/25 text-sky-200 border-sky-400 ring-2 ring-sky-500/40';
       case 'Booked':
-        return 'bg-emerald-100 text-emerald-800 border-emerald-300 ring-2 ring-emerald-400/30';
+        return 'bg-emerald-500/25 text-emerald-200 border-emerald-400 ring-2 ring-emerald-500/40';
       default:
-        return 'bg-brand-teal-50 text-brand-teal border-brand-teal-200 ring-2 ring-brand-teal/30';
+        return 'bg-violet-500/25 text-violet-200 border-violet-400 ring-2 ring-violet-500/40';
     }
   };
 
@@ -169,17 +169,17 @@ export function EnquiryDetailModal({
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6 bg-content-primary/50 backdrop-blur-sm animate-fadeIn"
+      className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6 bg-black/80 backdrop-blur-md animate-fadeIn"
       role="dialog"
       aria-modal="true"
       aria-labelledby="enquiry-detail-title"
     >
-      <div className="relative w-full max-w-2xl max-h-[90vh] bg-surface-card rounded-2xl shadow-2xl border border-surface-muted overflow-hidden flex flex-col">
+      <div className="relative w-full max-w-2xl max-h-[90vh] bg-[#0D1126] rounded-2xl shadow-2xl border border-white/10 overflow-hidden flex flex-col">
         {/* Modal Header */}
-        <div className="px-6 py-4 border-b border-surface-muted flex items-start justify-between bg-surface-bg/80">
+        <div className="px-6 py-4 border-b border-white/10 flex items-start justify-between bg-[#070913]/90">
           <div className="space-y-1">
             <div className="flex items-center space-x-2">
-              <span className="font-mono text-xs font-bold text-brand-teal px-2 py-0.5 rounded-md bg-brand-teal-50 border border-brand-teal-100">
+              <span className="font-mono text-xs font-bold text-violet-300 px-2.5 py-0.5 rounded-md bg-violet-500/15 border border-violet-500/30">
                 {enquiry.id}
               </span>
               <span
@@ -189,14 +189,14 @@ export function EnquiryDetailModal({
               >
                 {enquiry.status}
               </span>
-              <span className="text-xs text-content-muted">•</span>
-              <span className="text-xs font-medium text-content-secondary">
+              <span className="text-xs text-slate-500">•</span>
+              <span className="text-xs font-medium text-slate-400">
                 {enquiry.serviceCategory}
               </span>
             </div>
             <h3
               id="enquiry-detail-title"
-              className="text-xl font-extrabold text-content-primary"
+              className="text-xl font-extrabold text-white"
             >
               {enquiry.serviceTitle}
             </h3>
@@ -204,7 +204,7 @@ export function EnquiryDetailModal({
 
           <button
             onClick={onClose}
-            className="p-1.5 text-content-secondary hover:text-content-primary rounded-lg hover:bg-surface-muted transition-colors"
+            className="p-1.5 text-slate-400 hover:text-white rounded-lg hover:bg-white/5 transition-colors"
             aria-label="Close details"
           >
             <X className="w-5 h-5" />
@@ -220,15 +220,15 @@ export function EnquiryDetailModal({
               aria-live="polite"
               className={`p-3.5 rounded-xl text-xs flex items-center justify-between shadow-xs animate-fadeIn border ${
                 feedback.ok
-                  ? 'bg-emerald-50 border-emerald-200 text-emerald-800'
-                  : 'bg-rose-50 border-rose-200 text-rose-800'
+                  ? 'bg-emerald-500/15 border-emerald-500/30 text-emerald-300'
+                  : 'bg-rose-500/15 border-rose-500/30 text-rose-300'
               }`}
             >
               <div className="flex items-center space-x-2">
                 {feedback.ok ? (
-                  <CheckCircle2 className="w-4 h-4 text-emerald-600 flex-shrink-0" />
+                  <CheckCircle2 className="w-4 h-4 text-emerald-400 flex-shrink-0" />
                 ) : (
-                  <AlertTriangle className="w-4 h-4 text-rose-500 flex-shrink-0" />
+                  <AlertTriangle className="w-4 h-4 text-rose-400 flex-shrink-0" />
                 )}
                 <span className="font-semibold">{feedback.text}</span>
               </div>
@@ -236,8 +236,8 @@ export function EnquiryDetailModal({
                 onClick={() => setFeedback(null)}
                 className={`p-1 rounded-lg transition-colors ${
                   feedback.ok
-                    ? 'text-emerald-700 hover:text-emerald-900 hover:bg-emerald-100'
-                    : 'text-rose-700 hover:text-rose-900 hover:bg-rose-100'
+                    ? 'text-emerald-300 hover:text-white hover:bg-emerald-500/20'
+                    : 'text-rose-300 hover:text-white hover:bg-rose-500/20'
                 }`}
                 aria-label="Dismiss notification"
               >
@@ -250,65 +250,65 @@ export function EnquiryDetailModal({
           {statusError && !feedback && (
             <div
               role="alert"
-              className="p-3.5 rounded-xl bg-rose-50 border border-rose-200 text-rose-800 text-xs flex items-start space-x-2"
+              className="p-3.5 rounded-xl bg-rose-500/15 border border-rose-500/30 text-rose-300 text-xs flex items-start space-x-2"
             >
-              <AlertTriangle className="w-4 h-4 text-rose-500 flex-shrink-0 mt-0.5" />
+              <AlertTriangle className="w-4 h-4 text-rose-400 flex-shrink-0 mt-0.5" />
               <span className="font-semibold">{statusError}</span>
             </div>
           )}
 
           {/* Customer & Location Metadata Grid */}
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 p-3.5 rounded-xl bg-surface-bg border border-surface-muted text-xs">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 p-3.5 rounded-xl bg-[#070913] border border-white/10 text-xs">
             <div className="space-y-1">
-              <div className="text-content-muted flex items-center space-x-1 font-semibold uppercase tracking-wider text-[10px]">
-                <User className="w-3.5 h-3.5" />
+              <div className="text-slate-400 flex items-center space-x-1 font-semibold uppercase tracking-wider text-[10px]">
+                <User className="w-3.5 h-3.5 text-violet-400" />
                 <span>Customer</span>
               </div>
-              <div className="font-bold text-content-primary text-sm">
+              <div className="font-bold text-white text-sm">
                 {enquiry.customerName}
               </div>
             </div>
 
             <div className="space-y-1">
-              <div className="text-content-muted flex items-center space-x-1 font-semibold uppercase tracking-wider text-[10px]">
-                <MapPin className="w-3.5 h-3.5" />
+              <div className="text-slate-400 flex items-center space-x-1 font-semibold uppercase tracking-wider text-[10px]">
+                <MapPin className="w-3.5 h-3.5 text-violet-400" />
                 <span>Service Location</span>
               </div>
-              <div className="font-medium text-content-primary truncate" title={enquiry.location}>
+              <div className="font-medium text-slate-300 truncate" title={enquiry.location}>
                 {enquiry.location}
               </div>
             </div>
 
             <div className="space-y-1">
-              <div className="text-content-muted flex items-center space-x-1 font-semibold uppercase tracking-wider text-[10px]">
-                <Clock className="w-3.5 h-3.5" />
+              <div className="text-slate-400 flex items-center space-x-1 font-semibold uppercase tracking-wider text-[10px]">
+                <Clock className="w-3.5 h-3.5 text-violet-400" />
                 <span>Received</span>
               </div>
-              <div className="font-medium text-content-primary">
+              <div className="font-medium text-slate-300">
                 {enquiry.receivedTime} ({enquiry.urgency} Urgency)
               </div>
             </div>
           </div>
 
           {/* Interactive Status Update Control Section */}
-          <div className="p-4 rounded-xl bg-surface-bg/70 border border-surface-muted space-y-3">
+          <div className="p-4 rounded-xl bg-[#0A0D1F] border border-white/10 space-y-3">
             <div className="flex items-center justify-between">
               <label
                 id="status-control-label"
-                className="text-xs font-bold uppercase tracking-wider text-content-secondary flex items-center space-x-1.5"
+                className="text-xs font-bold uppercase tracking-wider text-slate-300 flex items-center space-x-1.5"
               >
-                <CheckCircle2 className="w-4 h-4 text-brand-teal" />
+                <CheckCircle2 className="w-4 h-4 text-violet-400" />
                 <span>Change Enquiry Status</span>
               </label>
-              <span className="text-[11px] text-content-muted flex items-center space-x-1">
+              <span className="text-[11px] text-slate-400 flex items-center space-x-1">
                 {statusUpdating ? (
                   <>
-                    <Loader2 className="w-3.5 h-3.5 animate-spin text-brand-teal" />
+                    <Loader2 className="w-3.5 h-3.5 animate-spin text-violet-400" />
                     <span>Saving…</span>
                   </>
                 ) : dataSource === 'demo' ? (
                   <>
-                    <WifiOff className="w-3.5 h-3.5 text-amber-500" />
+                    <WifiOff className="w-3.5 h-3.5 text-amber-400" />
                     <span>Demo — local only</span>
                   </>
                 ) : (
@@ -335,9 +335,9 @@ export function EnquiryDetailModal({
                       isCurrent
                         ? `${getStatusActiveStyle(statusOption)} cursor-default`
                         : statusUpdating
-                        ? 'opacity-50 cursor-not-allowed bg-surface-bg border-surface-muted text-content-secondary'
-                        : 'bg-white border-surface-muted text-content-secondary hover:text-content-primary hover:border-brand-teal/40 hover:bg-surface-bg shadow-xs active:scale-[0.98]'
-                    } focus-visible:outline-brand-teal`}
+                        ? 'opacity-50 cursor-not-allowed bg-[#070913] border-white/5 text-slate-500'
+                        : 'bg-[#121838] border-white/10 text-slate-300 hover:text-white hover:border-violet-500/40 hover:bg-[#1A224E] shadow-xs active:scale-[0.98]'
+                    } focus-visible:outline-violet-400`}
                     id={`status-btn-${statusOption.toLowerCase().replace(/\s+/g, '-')}`}
                   >
                     {isCurrent && !statusUpdating && (
@@ -355,17 +355,17 @@ export function EnquiryDetailModal({
 
           {/* Convert to Booking Panel (Collapsible or Active) */}
           {showConvertForm && (
-            <div className="p-4 sm:p-5 rounded-xl bg-surface-card border-2 border-brand-teal/30 shadow-card space-y-4 animate-fadeIn">
-              <div className="flex items-center justify-between pb-2 border-b border-surface-muted">
+            <div className="p-4 sm:p-5 rounded-xl bg-[#0B0F24] border border-violet-500/30 shadow-xl space-y-4 animate-fadeIn">
+              <div className="flex items-center justify-between pb-2 border-b border-white/10">
                 <div className="flex items-center space-x-2">
-                  <div className="w-7 h-7 rounded-lg bg-brand-teal text-white flex items-center justify-center">
+                  <div className="w-7 h-7 rounded-lg bg-gradient-to-tr from-violet-600 to-indigo-500 text-white flex items-center justify-center">
                     <CalendarPlus className="w-4 h-4" />
                   </div>
                   <div>
-                    <h4 className="text-xs font-bold uppercase tracking-wider text-content-primary">
+                    <h4 className="text-xs font-bold uppercase tracking-wider text-white">
                       Schedule Service Booking
                     </h4>
-                    <p className="text-[11px] text-content-secondary">
+                    <p className="text-[11px] text-slate-400">
                       Convert this enquiry into a confirmed booking.
                     </p>
                   </div>
@@ -373,7 +373,7 @@ export function EnquiryDetailModal({
                 <button
                   type="button"
                   onClick={() => setShowConvertForm(false)}
-                  className="text-xs font-semibold text-content-muted hover:text-content-primary"
+                  className="text-xs font-semibold text-slate-400 hover:text-white"
                 >
                   Cancel
                 </button>
@@ -381,20 +381,20 @@ export function EnquiryDetailModal({
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
                 <div>
-                  <label className="font-semibold text-content-secondary block mb-1">
+                  <label className="font-semibold text-slate-300 block mb-1">
                     Booking Date *
                   </label>
                   <input
                     type="date"
                     value={bookingDate}
                     onChange={(e) => setBookingDate(e.target.value)}
-                    className="w-full px-3 py-2 rounded-xl bg-surface-bg border border-surface-muted text-content-primary focus:outline-none focus:ring-2 focus:ring-brand-teal/20 focus:border-brand-teal"
+                    className="w-full px-3 py-2 rounded-xl bg-[#070913] border border-white/10 text-white focus:outline-none focus:ring-2 focus:ring-violet-500/20 focus:border-violet-500"
                     id="booking-date-input"
                   />
                 </div>
 
                 <div>
-                  <label className="font-semibold text-content-secondary block mb-1">
+                  <label className="font-semibold text-slate-300 block mb-1">
                     Booking Time *
                   </label>
                   <input
@@ -402,13 +402,13 @@ export function EnquiryDetailModal({
                     value={bookingTime}
                     onChange={(e) => setBookingTime(e.target.value)}
                     placeholder="e.g. 09:30 AM or 14:00"
-                    className="w-full px-3 py-2 rounded-xl bg-surface-bg border border-surface-muted text-content-primary focus:outline-none focus:ring-2 focus:ring-brand-teal/20 focus:border-brand-teal"
+                    className="w-full px-3 py-2 rounded-xl bg-[#070913] border border-white/10 text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-violet-500/20 focus:border-violet-500"
                     id="booking-time-input"
                   />
                 </div>
 
                 <div>
-                  <label className="font-semibold text-content-secondary block mb-1">
+                  <label className="font-semibold text-slate-300 block mb-1">
                     Duration
                   </label>
                   <input
@@ -416,12 +416,12 @@ export function EnquiryDetailModal({
                     value={duration}
                     onChange={(e) => setDuration(e.target.value)}
                     placeholder="e.g. 1.5 hrs"
-                    className="w-full px-3 py-2 rounded-xl bg-surface-bg border border-surface-muted text-content-primary focus:outline-none focus:ring-2 focus:ring-brand-teal/20 focus:border-brand-teal"
+                    className="w-full px-3 py-2 rounded-xl bg-[#070913] border border-white/10 text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-violet-500/20 focus:border-violet-500"
                   />
                 </div>
 
                 <div>
-                  <label className="font-semibold text-content-secondary block mb-1">
+                  <label className="font-semibold text-slate-300 block mb-1">
                     Assignee (Optional)
                   </label>
                   <input
@@ -429,12 +429,12 @@ export function EnquiryDetailModal({
                     value={assignee}
                     onChange={(e) => setAssignee(e.target.value)}
                     placeholder="e.g. Alex M. or Crew 1"
-                    className="w-full px-3 py-2 rounded-xl bg-surface-bg border border-surface-muted text-content-primary focus:outline-none focus:ring-2 focus:ring-brand-teal/20 focus:border-brand-teal"
+                    className="w-full px-3 py-2 rounded-xl bg-[#070913] border border-white/10 text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-violet-500/20 focus:border-violet-500"
                   />
                 </div>
 
                 <div className="sm:col-span-2">
-                  <label className="font-semibold text-content-secondary block mb-1">
+                  <label className="font-semibold text-slate-300 block mb-1">
                     Internal Booking Notes
                   </label>
                   <textarea
@@ -442,7 +442,7 @@ export function EnquiryDetailModal({
                     value={bookingNotes}
                     onChange={(e) => setBookingNotes(e.target.value)}
                     placeholder="Access codes, customer notes, parts required..."
-                    className="w-full px-3 py-2 rounded-xl bg-surface-bg border border-surface-muted text-content-primary focus:outline-none focus:ring-2 focus:ring-brand-teal/20 focus:border-brand-teal resize-none"
+                    className="w-full px-3 py-2 rounded-xl bg-[#070913] border border-white/10 text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-violet-500/20 focus:border-violet-500 resize-none"
                   />
                 </div>
               </div>
@@ -451,7 +451,7 @@ export function EnquiryDetailModal({
                 <button
                   type="button"
                   onClick={() => setShowConvertForm(false)}
-                  className="px-3.5 py-2 rounded-xl border border-surface-muted bg-white hover:bg-surface-bg text-content-secondary text-xs font-semibold"
+                  className="px-3.5 py-2 rounded-xl border border-white/10 bg-[#121838] hover:bg-[#1A224E] text-slate-300 text-xs font-semibold"
                 >
                   Cancel
                 </button>
@@ -459,7 +459,7 @@ export function EnquiryDetailModal({
                   type="button"
                   onClick={handleConfirmConvert}
                   disabled={converting}
-                  className="inline-flex items-center space-x-1.5 px-4 py-2 rounded-xl bg-brand-teal hover:bg-brand-teal-light text-white font-semibold text-xs shadow-soft transition-all disabled:opacity-50"
+                  className="inline-flex items-center space-x-1.5 px-4 py-2 rounded-xl bg-gradient-to-r from-violet-600 to-indigo-600 hover:from-violet-500 hover:to-indigo-500 text-white font-semibold text-xs shadow-lg shadow-violet-600/30 transition-all disabled:opacity-50"
                   id="confirm-convert-btn"
                 >
                   {converting ? (
@@ -480,11 +480,11 @@ export function EnquiryDetailModal({
 
           {/* Customer Message Block */}
           <div className="space-y-2">
-            <h4 className="text-xs font-bold uppercase tracking-wider text-content-secondary flex items-center space-x-1.5">
-              <FileText className="w-4 h-4 text-brand-teal" />
+            <h4 className="text-xs font-bold uppercase tracking-wider text-slate-300 flex items-center space-x-1.5">
+              <FileText className="w-4 h-4 text-violet-400" />
               <span>Customer Message</span>
             </h4>
-            <div className="p-4 rounded-xl bg-surface-bg/50 border border-surface-muted text-sm text-content-primary leading-relaxed whitespace-pre-line font-normal">
+            <div className="p-4 rounded-xl bg-[#070913] border border-white/10 text-sm text-slate-200 leading-relaxed whitespace-pre-line font-normal">
               "{enquiry.message}"
             </div>
           </div>
@@ -492,16 +492,16 @@ export function EnquiryDetailModal({
           {/* AI Suggested Response */}
           <div className="space-y-2.5">
             <div className="flex items-center justify-between">
-              <h4 className="text-xs font-bold uppercase tracking-wider text-brand-teal flex items-center space-x-1.5">
-                <Sparkles className="w-4 h-4 text-brand-teal" />
+              <h4 className="text-xs font-bold uppercase tracking-wider text-violet-400 flex items-center space-x-1.5">
+                <Sparkles className="w-4 h-4 text-violet-400" />
                 <span>AI-Assisted Draft Proposal</span>
               </h4>
-              <span className="text-[11px] text-content-muted flex items-center space-x-1">
-                <ShieldCheck className="w-3.5 h-3.5 text-brand-teal" />
+              <span className="text-[11px] text-slate-400 flex items-center space-x-1">
+                <ShieldCheck className="w-3.5 h-3.5 text-violet-400" />
                 <span>Human review required</span>
               </span>
             </div>
-            <div className="p-4 rounded-xl bg-brand-teal-50/60 border border-brand-teal-100/80 text-sm text-content-primary leading-relaxed relative">
+            <div className="p-4 rounded-xl bg-violet-950/30 border border-violet-500/30 text-sm text-violet-100 leading-relaxed relative">
               <p className="whitespace-pre-line">
                 {enquiry.suggestedReply}
               </p>
@@ -509,12 +509,12 @@ export function EnquiryDetailModal({
           </div>
 
           {/* Persistence notice — accurate per data source and database connection */}
-          <div className="p-3.5 rounded-xl bg-surface-bg border border-surface-muted flex items-start space-x-2.5 text-xs text-content-secondary">
-            <AlertCircle className="w-4 h-4 text-brand-teal flex-shrink-0 mt-0.5" />
+          <div className="p-3.5 rounded-xl bg-[#070913] border border-white/10 flex items-start space-x-2.5 text-xs text-slate-400">
+            <AlertCircle className="w-4 h-4 text-violet-400 flex-shrink-0 mt-0.5" />
             <div className="space-y-0.5">
               {dataSource === 'demo' ? (
                 <>
-                  <span className="font-semibold text-content-primary">
+                  <span className="font-semibold text-white">
                     Demo Mode (Server Offline):
                   </span>
                   <p className="leading-relaxed">
@@ -525,7 +525,7 @@ export function EnquiryDetailModal({
                 </>
               ) : databaseStatus === 'connected' ? (
                 <>
-                  <span className="font-semibold text-content-primary">
+                  <span className="font-semibold text-white">
                     MongoDB Persistent Storage:
                   </span>
                   <p className="leading-relaxed">
@@ -535,7 +535,7 @@ export function EnquiryDetailModal({
                 </>
               ) : (
                 <>
-                  <span className="font-semibold text-content-primary">
+                  <span className="font-semibold text-white">
                     Standby Mode (Database Offline):
                   </span>
                   <p className="leading-relaxed">
@@ -550,18 +550,18 @@ export function EnquiryDetailModal({
         </div>
 
         {/* Modal Footer */}
-        <div className="px-6 py-3.5 bg-surface-bg/80 border-t border-surface-muted flex items-center justify-between">
+        <div className="px-6 py-3.5 bg-[#070913]/90 border-t border-white/10 flex items-center justify-between">
           <div>
             {isBooked ? (
-              <span className="inline-flex items-center space-x-1.5 px-3 py-1.5 rounded-xl bg-emerald-50 text-emerald-700 border border-emerald-200 text-xs font-semibold">
-                <CheckCircle2 className="w-4 h-4 text-emerald-600" />
+              <span className="inline-flex items-center space-x-1.5 px-3 py-1.5 rounded-xl bg-emerald-500/15 text-emerald-300 border border-emerald-500/30 text-xs font-semibold">
+                <CheckCircle2 className="w-4 h-4 text-emerald-400" />
                 <span>{convertedId ? `Converted (${convertedId})` : 'Enquiry Booked & Scheduled'}</span>
               </span>
             ) : onConvertToBooking ? (
               <button
                 type="button"
                 onClick={() => setShowConvertForm(!showConvertForm)}
-                className="inline-flex items-center space-x-1.5 px-3.5 py-2 rounded-xl bg-brand-teal hover:bg-brand-teal-light text-white font-semibold text-xs shadow-soft transition-all"
+                className="inline-flex items-center space-x-1.5 px-3.5 py-2 rounded-xl bg-gradient-to-r from-violet-600 to-indigo-600 hover:from-violet-500 hover:to-indigo-500 text-white font-semibold text-xs shadow-lg shadow-violet-600/30 transition-all hover:scale-[1.02] active:scale-[0.98]"
                 id="convert-to-booking-btn"
               >
                 <CalendarPlus className="w-4 h-4" />
@@ -573,7 +573,7 @@ export function EnquiryDetailModal({
           <button
             type="button"
             onClick={onClose}
-            className="px-5 py-2.5 rounded-xl border border-surface-muted bg-white hover:bg-surface-bg text-content-primary font-semibold text-xs transition-colors shadow-xs"
+            className="px-5 py-2.5 rounded-xl border border-white/10 bg-[#121838] hover:bg-[#1A224E] text-slate-200 font-semibold text-xs transition-colors shadow-xs"
           >
             Close
           </button>

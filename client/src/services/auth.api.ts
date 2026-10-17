@@ -4,6 +4,15 @@ import { ApiError } from './enquiry.api';
 const rawBase = (import.meta.env.VITE_API_URL as string | undefined)?.trim();
 const API_BASE = rawBase ? rawBase.replace(/\/+$/, '') : '/api';
 
+// Remove tokens persisted by older browser versions now that sessions use cookies.
+if (typeof window !== 'undefined') {
+  try {
+    window.localStorage.removeItem('serviceflow_token');
+  } catch {
+    // Storage may be unavailable in restricted browser contexts.
+  }
+}
+
 export interface RegisterPayload {
   name: string;
   businessName: string;
@@ -21,7 +30,6 @@ interface AuthSuccessResponse {
   message?: string;
   data: {
     user: UserProfile;
-    token?: string;
   };
 }
 
@@ -62,9 +70,6 @@ export async function registerUser(payload: RegisterPayload): Promise<UserProfil
   });
 
   const body = await parseAuthResponse<AuthSuccessResponse>(res);
-  if (body.data.token) {
-    localStorage.setItem('serviceflow_token', body.data.token);
-  }
   return body.data.user;
 }
 
@@ -81,31 +86,20 @@ export async function loginUser(payload: LoginPayload): Promise<UserProfile> {
   });
 
   const body = await parseAuthResponse<AuthSuccessResponse>(res);
-  if (body.data.token) {
-    localStorage.setItem('serviceflow_token', body.data.token);
-  }
   return body.data.user;
 }
 
 /**
- * Get current authenticated user profile using active session cookie or Bearer token.
+ * Get current authenticated user profile using the HttpOnly session cookie.
  */
 export async function fetchCurrentUser(): Promise<UserProfile | null> {
-  const token = localStorage.getItem('serviceflow_token');
-  const headers: Record<string, string> = {};
-  if (token) {
-    headers['Authorization'] = `Bearer ${token}`;
-  }
-
   try {
     const res = await fetch(`${API_BASE}/auth/me`, {
       method: 'GET',
-      headers,
       credentials: 'include',
     });
 
     if (res.status === 401) {
-      localStorage.removeItem('serviceflow_token');
       return null;
     }
 
@@ -113,7 +107,6 @@ export async function fetchCurrentUser(): Promise<UserProfile | null> {
     return body.data.user;
   } catch (err) {
     if (err instanceof ApiError && err.statusCode === 401) {
-      localStorage.removeItem('serviceflow_token');
       return null;
     }
     throw err;
@@ -124,12 +117,8 @@ export async function fetchCurrentUser(): Promise<UserProfile | null> {
  * Log out current user, invalidating session cookie.
  */
 export async function logoutUser(): Promise<void> {
-  try {
-    await fetch(`${API_BASE}/auth/logout`, {
-      method: 'POST',
-      credentials: 'include',
-    });
-  } finally {
-    localStorage.removeItem('serviceflow_token');
-  }
+  await fetch(`${API_BASE}/auth/logout`, {
+    method: 'POST',
+    credentials: 'include',
+  });
 }

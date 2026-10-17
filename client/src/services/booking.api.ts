@@ -19,12 +19,7 @@ const rawBase = (import.meta.env.VITE_API_URL as string | undefined)?.trim();
 const API_BASE = rawBase ? rawBase.replace(/\/+$/, '') : '/api';
 
 function getAuthHeaders(): Record<string, string> {
-  const headers: Record<string, string> = { 'Content-Type': 'application/json' };
-  const token = localStorage.getItem('serviceflow_token');
-  if (token) {
-    headers['Authorization'] = `Bearer ${token}`;
-  }
-  return headers;
+  return { 'Content-Type': 'application/json' };
 }
 
 /** Parses a fetch Response, surfacing HTTP errors as ApiError. */
