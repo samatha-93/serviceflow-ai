@@ -30,7 +30,7 @@ The project demonstrates full-stack architecture principles: a modern single-pag
 
 ## 3. Problem Statement
 
-Small service businesses—such as residential cleaners, landscapers, handymen, and mobile wellness operators—frequently operate without dedicated administrative staff. As a result, they face common operational friction:
+Small service businesses—such as residential cleaners, trade contractors, maintenance specialists, and mobile wellness operators—frequently operate without dedicated administrative staff. As a result, they face common operational friction:
 
 - **Scattered Communication:** Inquiries arrive through phone calls, SMS, WhatsApp, and social media, making it easy for leads to be misplaced or forgotten.
 - **Disconnected Scheduling:** Converting an agreed quote into a scheduled appointment often requires manual re-entry into a separate calendar tool, creating risks of double-booking or scheduling errors.
@@ -63,7 +63,7 @@ The long-term vision of ServiceFlow AI is a continuous, intelligent operating pi
 ServiceFlow AI is modeled around the operational patterns of small and independent service providers:
 
 - **Residential & Commercial Cleaning:** House cleaners, turnover specialists, and commercial janitorial contractors needing structured job specifications and recurring schedule tracking.
-- **Outdoor & Property Maintenance:** Landscapers, lawn care technicians, pressure washing operators, and tree services managing weather-sensitive appointments and address clusters.
+- **Field Service & Property Maintenance:** Facility maintenance technicians, building contractors, commercial cleaning crews, and repair operators managing recurring appointments and service dispatch clusters.
 - **Home Trades & Repairs:** Handymen, plumbers, electricians, and appliance repair technicians triaging emergency requests and tracking job notes.
 - **Mobile Wellness & Personal Care:** Mobile massage therapists, personal trainers, and stylists managing appointments with specific travel times.
 - **Independent Professional Services:** Mobile notaries, building inspectors, and field consultants requiring structured consultation booking.
@@ -78,7 +78,7 @@ ServiceFlow AI is modeled around the operational patterns of small and independe
 
 - **Authentication & Multi-Tenant Data Isolation:**
   - Secure business owner registration and login using `bcryptjs` password hashing.
-  - Session issuance via JSON Web Tokens (JWT) stored in secure `HttpOnly`, `SameSite=lax` cookies.
+  - Session issuance via JSON Web Tokens (JWT) stored in secure `HttpOnly` cookies (`SameSite=strict` in production, `SameSite=lax` in development).
   - Logical data isolation: Every tenant is assigned a distinct UUID `businessId`. All database queries and writes for enquiries, bookings, and business profiles are strictly scoped to the authenticated business.
   - Guest Demo Mode: Unauthenticated visitors can explore pre-seeded sample data (`DEMO_TENANT_ID`) in a safe, read-only mode without accessing private tenant records.
 
@@ -436,7 +436,7 @@ All API endpoints are prefixed with `/api` and return standardized JSON envelope
 Implemented security controls:
 
 - **Password Protection:** User passwords are never stored in plaintext. Passwords are salted and hashed using `bcryptjs` with 10 salt rounds prior to persistence.
-- **Session Security:** Sessions are maintained via JSON Web Tokens signed with HMAC SHA-256. Tokens are transmitted in `HttpOnly`, `SameSite=lax` cookies to protect against client-side script extraction (XSS).
+- **Session Security:** Sessions are maintained via JSON Web Tokens signed with HMAC SHA-256. Tokens are transmitted in `HttpOnly` cookies (`SameSite=strict` in production environments, `SameSite=lax` in local development) to protect against client-side script extraction (XSS).
 - **Tenant Isolation:** The API middleware validates the JWT and injects `req.user` into the request lifecycle. All persistent operations enforce `{ businessId: req.user.businessId }`, preventing horizontal privilege escalation across tenants.
 - **HTTP Header Hardening:** `helmet` is configured to set defensive HTTP headers, disabling MIME sniffing, restricting framing (anti-clickjacking), and sanitizing referrer data.
 - **CORS and Origin Validation:** Credentialed browser requests are allowlisted by exact `CLIENT_ORIGINS`. Mutating requests require an allowed `Origin`, except no-Origin Bearer-authenticated API clients. Cookie-authenticated mutations with missing, `null`, malformed, or untrusted origins are rejected; CORS alone is not treated as CSRF protection. Non-browser requests without an Origin remain available for health checks and supported API clients.
