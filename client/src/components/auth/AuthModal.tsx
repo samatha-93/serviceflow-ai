@@ -95,26 +95,26 @@ export function AuthModal({
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6 bg-content-primary/50 backdrop-blur-sm animate-fadeIn"
+      className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6 bg-black/80 backdrop-blur-md animate-fadeIn"
       role="dialog"
       aria-modal="true"
       aria-labelledby="auth-modal-title"
     >
-      <div className="relative w-full max-w-md bg-surface-card rounded-2xl shadow-2xl border border-surface-muted overflow-hidden">
+      <div className="relative w-full max-w-md bg-[#0D1126] rounded-2xl shadow-2xl border border-white/10 overflow-hidden">
         {/* Header */}
         <div className="p-6 sm:p-7 space-y-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-2.5">
-              <div className="h-9 w-9 rounded-xl bg-brand-teal text-white flex items-center justify-center shadow-soft">
+              <div className="h-9 w-9 rounded-xl bg-gradient-to-tr from-violet-600 to-indigo-500 text-white flex items-center justify-center shadow-lg shadow-violet-500/30">
                 <Sparkles className="w-5 h-5" />
               </div>
-              <span className="font-bold text-lg text-content-primary">
-                ServiceFlow <span className="text-brand-teal">AI</span>
+              <span className="font-bold text-lg text-white">
+                ServiceFlow <span className="text-violet-400">AI</span>
               </span>
             </div>
             <button
               onClick={onClose}
-              className="p-1.5 text-content-secondary hover:text-content-primary rounded-lg hover:bg-surface-muted transition-colors"
+              className="p-1.5 text-slate-400 hover:text-white rounded-lg hover:bg-white/5 transition-colors"
               aria-label="Close dialog"
             >
               <X className="w-5 h-5" />
@@ -122,7 +122,7 @@ export function AuthModal({
           </div>
 
           {/* Mode Switcher Tabs */}
-          <div className="flex rounded-xl bg-surface-bg p-1 border border-surface-muted">
+          <div className="flex rounded-xl bg-[#070913] p-1 border border-white/10">
             <button
               type="button"
               onClick={() => {
@@ -131,8 +131,8 @@ export function AuthModal({
               }}
               className={`flex-1 py-2 text-xs font-bold rounded-lg transition-all ${
                 mode === 'login'
-                  ? 'bg-surface-card text-brand-teal shadow-xs'
-                  : 'text-content-secondary hover:text-content-primary'
+                  ? 'bg-violet-600/30 text-violet-300 border border-violet-500/40 shadow-xs'
+                  : 'text-slate-400 hover:text-white border border-transparent'
               }`}
             >
               Sign In
@@ -145,8 +145,8 @@ export function AuthModal({
               }}
               className={`flex-1 py-2 text-xs font-bold rounded-lg transition-all ${
                 mode === 'register'
-                  ? 'bg-surface-card text-brand-teal shadow-xs'
-                  : 'text-content-secondary hover:text-content-primary'
+                  ? 'bg-violet-600/30 text-violet-300 border border-violet-500/40 shadow-xs'
+                  : 'text-slate-400 hover:text-white border border-transparent'
               }`}
             >
               Create Account
@@ -154,10 +154,10 @@ export function AuthModal({
           </div>
 
           <div className="space-y-1">
-            <h3 id="auth-modal-title" className="text-xl font-extrabold text-content-primary">
+            <h3 id="auth-modal-title" className="text-xl font-extrabold text-white">
               {mode === 'login' ? 'Sign in to your business' : 'Register your service business'}
             </h3>
-            <p className="text-xs text-content-secondary">
+            <p className="text-xs text-slate-400">
               {mode === 'login'
                 ? 'Access your isolated enquiry inbox and operational triage.'
                 : 'Each business receives an isolated, secure workspace.'}
@@ -166,8 +166,8 @@ export function AuthModal({
 
           {/* Error Message */}
           {error && (
-            <div className="flex items-start space-x-2 p-3 rounded-xl bg-rose-50 border border-rose-200 text-rose-700 text-xs">
-              <AlertCircle className="w-4 h-4 flex-shrink-0 mt-0.5 text-rose-600" />
+            <div className="flex items-start space-x-2 p-3 rounded-xl bg-rose-500/15 border border-rose-500/30 text-rose-300 text-xs">
+              <AlertCircle className="w-4 h-4 flex-shrink-0 mt-0.5 text-rose-400" />
               <span>{error}</span>
             </div>
           )}
@@ -177,35 +177,37 @@ export function AuthModal({
             {mode === 'register' && (
               <>
                 <div>
-                  <label className="block text-xs font-semibold text-content-secondary mb-1">
+                  <label htmlFor="auth-name" className="block text-xs font-semibold text-slate-300 mb-1">
                     Your Name
                   </label>
                   <div className="relative">
-                    <User className="w-4 h-4 text-content-muted absolute left-3 top-3" />
+                    <User className="w-4 h-4 text-slate-500 absolute left-3 top-3" />
                     <input
+                      id="auth-name"
                       type="text"
                       required
                       value={name}
                       onChange={(e) => setName(e.target.value)}
                       placeholder="e.g. Alex Morgan"
-                      className="w-full pl-9 pr-3 py-2 text-sm rounded-xl border border-surface-muted bg-surface-bg text-content-primary focus:outline-none focus:ring-2 focus:ring-brand-teal/20 focus:border-brand-teal"
+                      className="w-full pl-9 pr-3 py-2 text-sm rounded-xl border border-white/10 bg-[#070913] text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-violet-500/20 focus:border-violet-500"
                     />
                   </div>
                 </div>
 
                 <div>
-                  <label className="block text-xs font-semibold text-content-secondary mb-1">
+                  <label htmlFor="auth-business-name" className="block text-xs font-semibold text-slate-300 mb-1">
                     Business Name
                   </label>
                   <div className="relative">
-                    <Building className="w-4 h-4 text-content-muted absolute left-3 top-3" />
+                    <Building className="w-4 h-4 text-slate-500 absolute left-3 top-3" />
                     <input
+                      id="auth-business-name"
                       type="text"
                       required
                       value={businessName}
                       onChange={(e) => setBusinessName(e.target.value)}
                       placeholder="e.g. Apex Electrical Services"
-                      className="w-full pl-9 pr-3 py-2 text-sm rounded-xl border border-surface-muted bg-surface-bg text-content-primary focus:outline-none focus:ring-2 focus:ring-brand-teal/20 focus:border-brand-teal"
+                      className="w-full pl-9 pr-3 py-2 text-sm rounded-xl border border-white/10 bg-[#070913] text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-violet-500/20 focus:border-violet-500"
                     />
                   </div>
                 </div>
@@ -213,35 +215,37 @@ export function AuthModal({
             )}
 
             <div>
-              <label className="block text-xs font-semibold text-content-secondary mb-1">
+              <label htmlFor="auth-email" className="block text-xs font-semibold text-slate-300 mb-1">
                 Business Email
               </label>
               <div className="relative">
-                <Mail className="w-4 h-4 text-content-muted absolute left-3 top-3" />
+                <Mail className="w-4 h-4 text-slate-500 absolute left-3 top-3" />
                 <input
+                  id="auth-email"
                   type="email"
                   required
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   placeholder="name@business.com"
-                  className="w-full pl-9 pr-3 py-2 text-sm rounded-xl border border-surface-muted bg-surface-bg text-content-primary focus:outline-none focus:ring-2 focus:ring-brand-teal/20 focus:border-brand-teal"
+                  className="w-full pl-9 pr-3 py-2 text-sm rounded-xl border border-white/10 bg-[#070913] text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-violet-500/20 focus:border-violet-500"
                 />
               </div>
             </div>
 
             <div>
-              <label className="block text-xs font-semibold text-content-secondary mb-1">
-                Password {mode === 'register' && <span className="text-content-muted">(min 8 chars)</span>}
+              <label htmlFor="auth-password" className="block text-xs font-semibold text-slate-300 mb-1">
+                Password {mode === 'register' && <span className="text-slate-500">(min 8 chars)</span>}
               </label>
               <div className="relative">
-                <Lock className="w-4 h-4 text-content-muted absolute left-3 top-3" />
+                <Lock className="w-4 h-4 text-slate-500 absolute left-3 top-3" />
                 <input
+                  id="auth-password"
                   type="password"
                   required
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   placeholder="••••••••"
-                  className="w-full pl-9 pr-3 py-2 text-sm rounded-xl border border-surface-muted bg-surface-bg text-content-primary focus:outline-none focus:ring-2 focus:ring-brand-teal/20 focus:border-brand-teal"
+                  className="w-full pl-9 pr-3 py-2 text-sm rounded-xl border border-white/10 bg-[#070913] text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-violet-500/20 focus:border-violet-500"
                 />
               </div>
             </div>
@@ -249,7 +253,7 @@ export function AuthModal({
             <button
               type="submit"
               disabled={loading}
-              className="w-full flex items-center justify-center space-x-2 py-2.5 px-4 rounded-xl bg-brand-teal text-white hover:bg-brand-teal-light font-semibold text-sm shadow-soft transition-all disabled:opacity-50 mt-2"
+              className="w-full flex items-center justify-center space-x-2 py-2.5 px-4 rounded-xl bg-gradient-to-r from-violet-600 to-indigo-600 hover:from-violet-500 hover:to-indigo-500 text-white font-semibold text-sm shadow-lg shadow-violet-600/30 transition-all disabled:opacity-50 mt-2 hover:scale-[1.01] active:scale-[0.99]"
             >
               {loading ? (
                 <>
@@ -266,7 +270,7 @@ export function AuthModal({
           </form>
         </div>
 
-        <div className="px-6 py-3 bg-surface-bg/80 border-t border-surface-muted text-center text-xs text-content-muted">
+        <div className="px-6 py-3 bg-[#070913]/90 border-t border-white/10 text-center text-xs text-slate-400">
           Protected with HttpOnly session cookies & tenant data isolation.
         </div>
       </div>

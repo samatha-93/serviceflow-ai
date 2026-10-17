@@ -155,7 +155,7 @@ export default function App() {
 
   // Public Landing Page (Preserved completely intact)
   return (
-    <div className="min-h-screen bg-surface-bg text-content-primary flex flex-col font-sans selection:bg-brand-teal selection:text-white">
+    <div className="min-h-screen bg-[#070913] text-slate-100 flex flex-col font-sans selection:bg-violet-600 selection:text-white">
       {/* 1. Navigation */}
       <Navbar
         onOpenGetStarted={() => setGetStartedOpen(true)}
